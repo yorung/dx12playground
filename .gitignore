@@ -1,0 +1,17 @@
+Release/
+Debug/
+ipch/
+bin/
+/VisualStudio/Tmp
+/VisualStudio/glheaders/*.h
+*.suo
+*.sdf
+*.opensdf
+*.aps
+*.bak
+*.opendb
+*.user
+.workspace/
+.project
+.classpath
+.settings
