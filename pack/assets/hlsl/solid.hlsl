@@ -1,9 +1,8 @@
-/*
 cbuffer perFrame : register(b0)
 {
 	float4x4 matVP;
 };
-*/
+
 struct VsInput {
 	float3 pos : POSITION;
 	float3 col : COLOR;
@@ -17,8 +16,7 @@ struct VsOutput {
 VsOutput VSMain(VsInput inp)
 {
 	VsOutput outp;
-//	outp.pos = mul(matVP, float4(inp.pos, 1));
-	outp.pos = float4(inp.pos, 1);
+	outp.pos = mul(matVP, float4(inp.pos, 1));
 	outp.col = inp.col;
 	return outp;
 }

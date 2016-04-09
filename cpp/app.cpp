@@ -24,6 +24,7 @@ App::App()
 
 void App::Draw()
 {
+	afSetDescriptorHeap(heap);
 	afSetPipeline(pipelineState, rootSignature);
 	afSetVertexBuffer(vbo, sizeof(Vertex));
 	afDraw(PT_TRIANGLELIST, 3);
@@ -33,18 +34,31 @@ void App::Init()
 {
 	GoMyDir();
 
+	Descriptor descs[] = {
+		CDescriptorCBV(0),
+	};
+	ubo = afCreateUBO(sizeof(Mat));
 	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
-	rootSignature = afCreateRootSignature(0, nullptr, 0, nullptr);
+	rootSignature = afCreateRootSignature(1, descs, 0, nullptr);
 	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DISABLE, CM_DISABLE, rootSignature);
+	SRVID srv[] = {
+		ubo,
+	};
+	heap = afCreateDescriptorHeap(dimof(srv), srv);
 }
 
 void App::Destroy()
 {
 	vbo.Reset();
+	ubo.Reset();
 	rootSignature.Reset();
 	pipelineState.Reset();
+	heap.Reset();
 }
 
 void App::Update()
 {
+	Mat m;
+	m = q2m(Quat(Vec3(0, 0, 1), (float)GetTime()));
+	afWriteBuffer(ubo, &m, sizeof(m));
 }
