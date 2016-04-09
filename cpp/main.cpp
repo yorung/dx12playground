@@ -140,6 +140,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE,
 			app.Init();
 		}
 		app.Update();
+		app.Draw();
 		deviceMan.Present();
 		Sleep(1);
 	}

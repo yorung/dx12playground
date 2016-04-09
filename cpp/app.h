@@ -1,4 +1,7 @@
 class App {
+	VBOID vbo;
+	ComPtr<ID3D12RootSignature> rootSignature;
+	ComPtr<ID3D12PipelineState> pipelineState;
 public:
 	App();
 	void Init();

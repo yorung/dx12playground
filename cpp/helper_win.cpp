@@ -78,7 +78,7 @@ void GoMyDir()
 	assert(p);
 	*p = '\0';
 	SetCurrentDirectoryA(dir);
-//	SetCurrentDirectoryA("../../pack/assets");
+	SetCurrentDirectoryA("../../pack/assets");
 }
 
 #pragma comment(lib, "winmm.lib")

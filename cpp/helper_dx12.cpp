@@ -3,8 +3,7 @@
 ComPtr<ID3DBlob> afCompileShader(const char* name, const char* entryPoint, const char* target)
 {
 	char path[MAX_PATH];
-	sprintf_s(path, sizeof(path), "%s.hlsl", name);
-	//	sprintf_s(path, sizeof(path), "hlsl/%s.hlsl", name);
+	sprintf_s(path, sizeof(path), "hlsl/%s.hlsl", name);
 #ifdef _DEBUG
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
@@ -13,7 +12,7 @@ ComPtr<ID3DBlob> afCompileShader(const char* name, const char* entryPoint, const
 	ComPtr<ID3DBlob> blob, err;
 	WCHAR wname[MAX_PATH];
 	MultiByteToWideChar(CP_ACP, 0, path, -1, wname, dimof(wname));
-	D3DCompileFromFile(wname, nullptr, nullptr, entryPoint, target, flags, 0, &blob, &err);
+	HRESULT hr = D3DCompileFromFile(wname, nullptr, nullptr, entryPoint, target, flags, 0, &blob, &err);
 	if (err) {
 		MessageBoxA(nullptr, (const char*)err->GetBufferPointer(), name, MB_OK | MB_ICONERROR);
 	}
@@ -163,7 +162,7 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	psoDesc.pRootSignature = rootSignature.Get();
 	psoDesc.VS = { reinterpret_cast<UINT8*>(vertexShader->GetBufferPointer()), vertexShader->GetBufferSize() };
 	psoDesc.PS = { reinterpret_cast<UINT8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
-	psoDesc.RasterizerState = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK };
+	psoDesc.RasterizerState = { D3D12_FILL_MODE_SOLID, cullMode == CM_CCW ? D3D12_CULL_MODE_BACK : cullMode == CM_CW ? D3D12_CULL_MODE_FRONT : D3D12_CULL_MODE_NONE };
 	psoDesc.BlendState = bd;
 	psoDesc.DepthStencilState.DepthEnable = FALSE;
 	psoDesc.DepthStencilState.StencilEnable = FALSE;
