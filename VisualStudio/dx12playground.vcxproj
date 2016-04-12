@@ -148,24 +148,34 @@
     <ClInclude Include="..\cpp\af_math.h" />
     <ClInclude Include="..\cpp\app.h" />
     <ClInclude Include="..\cpp\device_man_dx12.h" />
+    <ClInclude Include="..\cpp\dev_camera.h" />
     <ClInclude Include="..\cpp\helper.h" />
     <ClInclude Include="..\cpp\helper_dx12.h" />
     <ClInclude Include="..\cpp\helper_text.h" />
+    <ClInclude Include="..\cpp\matrix_man.h" />
+    <ClInclude Include="..\cpp\sky_man.h" />
     <ClInclude Include="..\cpp\stdafx.h" />
+    <ClInclude Include="..\cpp\system_misc.h" />
+    <ClInclude Include="..\cpp\triangle.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\cpp\app.cpp" />
     <ClCompile Include="..\cpp\device_man_dx12.cpp" />
+    <ClCompile Include="..\cpp\dev_camera.cpp" />
     <ClCompile Include="..\cpp\helper.cpp" />
     <ClCompile Include="..\cpp\helper_dx12.cpp" />
     <ClCompile Include="..\cpp\helper_win.cpp" />
     <ClCompile Include="..\cpp\main.cpp" />
+    <ClCompile Include="..\cpp\matrix_man.cpp" />
+    <ClCompile Include="..\cpp\sky_man.cpp" />
     <ClCompile Include="..\cpp\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\cpp\system_misc.cpp" />
+    <ClCompile Include="..\cpp\triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dx12playground.rc" />

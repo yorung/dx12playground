@@ -107,6 +107,9 @@ void DeviceManDX12::Flush()
 
 void DeviceManDX12::Present()
 {
+	if (!swapChain) {
+		return;
+	}
 	EndScene();
 	swapChain->Present(1, 0);
 	BeginScene();

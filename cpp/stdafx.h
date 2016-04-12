@@ -29,5 +29,9 @@ using Microsoft::WRL::ComPtr;
 #include "helper.h"
 #include "helper_text.h"
 #include "device_man_dx12.h"
-
+#include "matrix_man.h"
+#include "dev_camera.h"
+#include "system_misc.h"
+#include "sky_man.h"
+#include "triangle.h"
 #include "app.h"

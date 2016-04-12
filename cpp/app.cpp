@@ -2,63 +2,39 @@
 
 App app;
 
-static InputElement elements[] = {
-	CInputElement("POSITION", SF_R32G32B32_FLOAT, 0),
-	CInputElement("COLOR", SF_R32G32B32_FLOAT, 12),
-};
-
-struct Vertex {
-	Vec3 pos;
-	Vec3 color;
-};
-
-static Vertex vertices[] = {
-	{ Vec3(0, 1, 0), Vec3(1, 1, 0) },
-	{ Vec3(-1, -1, 0), Vec3(0, 1, 1) },
-	{ Vec3(1, -1, 0), Vec3(1, 0, 1) },
-};
-
 App::App()
 {
 }
 
 void App::Draw()
 {
-	afSetDescriptorHeap(heap);
-	afSetPipeline(pipelineState, rootSignature);
-	afSetVertexBuffer(vbo, sizeof(Vertex));
-	afDraw(PT_TRIANGLELIST, 3);
+	IVec2 scrSize = systemMisc.GetScreenSize();
+	float f = 1000;
+	float n = 1;
+	float aspect = (float)scrSize.x / scrSize.y;
+	Mat proj = perspectiveLH(45.0f * (float)M_PI / 180.0f, aspect, n, f);
+	matrixMan.Set(MatrixMan::PROJ, proj);
+
+	skyMan.Draw();
+	triangle.Draw();
 }
 
 void App::Init()
 {
 	GoMyDir();
 
-	Descriptor descs[] = {
-		CDescriptorCBV(0),
-	};
-	ubo = afCreateUBO(sizeof(Mat));
-	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
-	rootSignature = afCreateRootSignature(1, descs, 0, nullptr);
-	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DISABLE, CM_DISABLE, rootSignature);
-	SRVID srv[] = {
-		ubo,
-	};
-	heap = afCreateDescriptorHeap(dimof(srv), srv);
+	triangle.Create();
+	skyMan.Create("hakodate.jpg", "sky_photosphere");
 }
 
 void App::Destroy()
 {
-	vbo.Reset();
-	ubo.Reset();
-	rootSignature.Reset();
-	pipelineState.Reset();
-	heap.Reset();
+	triangle.Destroy();
+	skyMan.Destroy();
 }
 
 void App::Update()
 {
-	Mat m;
-	m = q2m(Quat(Vec3(0, 0, 1), (float)GetTime()));
-	afWriteBuffer(ubo, &m, sizeof(m));
+	matrixMan.Set(MatrixMan::VIEW, devCamera.CalcViewMatrix());
+	triangle.Update();
 }

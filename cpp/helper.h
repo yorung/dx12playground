@@ -37,4 +37,4 @@ struct TexDesc {
 	bool isCubeMap = false;
 };
 
-//SRVID afLoadTexture(const char* name, TexDesc& desc);
+SRVID afLoadTexture(const char* name, TexDesc& desc);

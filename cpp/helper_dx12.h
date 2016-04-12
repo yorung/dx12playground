@@ -27,6 +27,8 @@ typedef ComPtr<ID3D12Resource> IBOID;
 typedef ComPtr<ID3D12Resource> VBOID;
 typedef ComPtr<ID3D12Resource> UBOID;
 typedef ComPtr<ID3D12Resource> SRVID;
+inline void afSafeDeleteBuffer(ComPtr<ID3D12Resource>& p) { p.Reset(); }
+inline void afSafeDeleteTexture(SRVID& p) { p.Reset(); }
 
 void afSetPipeline(ComPtr<ID3D12PipelineState> ps, ComPtr<ID3D12RootSignature> rs);
 void afSetDescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap);

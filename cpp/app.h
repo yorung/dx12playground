@@ -1,9 +1,4 @@
 class App {
-	VBOID vbo;
-	UBOID ubo;
-	ComPtr<ID3D12RootSignature> rootSignature;
-	ComPtr<ID3D12PipelineState> pipelineState;
-	ComPtr<ID3D12DescriptorHeap> heap;
 public:
 	App();
 	void Init();
