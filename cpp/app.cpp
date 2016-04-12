@@ -29,6 +29,7 @@ void App::Init()
 
 void App::Destroy()
 {
+	deviceMan.Flush();
 	triangle.Destroy();
 	skyMan.Destroy();
 }
