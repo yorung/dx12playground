@@ -46,7 +46,7 @@ void DeviceManDX12::Destroy()
 void DeviceManDX12::WaitForPreviousFrame()
 {
 	const UINT64 prevFenceValue = fenceValue;
-	deviceMan.GetCommandQueue()->Signal(fence.Get(), prevFenceValue);
+	commandQueue->Signal(fence.Get(), prevFenceValue);
 	fenceValue++;
 
 	if (fence->GetCompletedValue() < prevFenceValue)
@@ -165,7 +165,7 @@ void DeviceManDX12::Create(HWND hWnd)
 	sd.Windowed = TRUE;
 
 	ComPtr<IDXGISwapChain> sc;
-	if (S_OK != factory->CreateSwapChain(deviceMan.GetCommandQueue().Get(), &sd, &sc)) {
+	if (S_OK != factory->CreateSwapChain(commandQueue.Get(), &sd, &sc)) {
 		Destroy();
 		return;
 	}

@@ -27,7 +27,6 @@ public:
 	ComPtr<IDXGIFactory4> GetFactory() { return factory; }
 	ComPtr<IDXGISwapChain3> GetSwapChain() { return swapChain; }
 	ComPtr<ID3D12Resource> GetRenderTarget() { return renderTargets[frameIndex]; }
-	ComPtr<ID3D12CommandQueue> GetCommandQueue() { return commandQueue; }
 	ID3D12CommandAllocator* GetCommandAllocator() { return commandAllocator.Get(); }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList.Get(); }
 };
