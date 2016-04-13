@@ -40,7 +40,10 @@ void DeviceManDX12::Destroy()
 	fence.Reset();
 	fenceValue = 1;
 	frameIndex = 0;
-	device.Reset();
+	int cnt = device.Reset();
+	if (cnt) {
+		MessageBoxA(GetActiveWindow(), SPrintf("%d leaks detected.", cnt), "DX12 leaks", MB_OK);
+	}
 }
 
 void DeviceManDX12::WaitForPreviousFrame()
