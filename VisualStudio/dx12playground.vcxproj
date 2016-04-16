@@ -150,9 +150,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\cpp\af_math.h" />
     <ClInclude Include="..\cpp\app.h" />
     <ClInclude Include="..\cpp\device_man_dx12.h" />
