@@ -1,5 +1,5 @@
-Release/
-Debug/
+*Release/
+*Debug/
 ipch/
 bin/
 /VisualStudio/Tmp
