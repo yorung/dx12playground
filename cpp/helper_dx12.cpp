@@ -153,20 +153,33 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	ComPtr<ID3DBlob> vertexShader = afCompileShader(shaderName, "VSMain", "vs_5_0");
 	ComPtr<ID3DBlob> pixelShader = afCompileShader(shaderName, "PSMain", "ps_5_0");
 
-	D3D12_BLEND_DESC bd = { FALSE, FALSE,{
-		FALSE,FALSE,
+	static D3D12_RENDER_TARGET_BLEND_DESC solid = {
+		FALSE, FALSE,
 		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
 		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-		D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL },
+		D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
+	};
+	static D3D12_RENDER_TARGET_BLEND_DESC alphaBlend = {
+		TRUE, FALSE,
+		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
+		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		D3D12_LOGIC_OP_NOOP, D3D12_COLOR_WRITE_ENABLE_ALL
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	switch (blendMode) {
+	case BM_NONE:
+		psoDesc.BlendState.RenderTarget[0] = solid;
+		break;
+	case BM_ALPHA:
+		psoDesc.BlendState.RenderTarget[0] = alphaBlend;
+		break;
+	}
 	psoDesc.InputLayout = { elements, (UINT)numElements };
 	psoDesc.pRootSignature = rootSignature.Get();
 	psoDesc.VS = { reinterpret_cast<UINT8*>(vertexShader->GetBufferPointer()), vertexShader->GetBufferSize() };
 	psoDesc.PS = { reinterpret_cast<UINT8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
 	psoDesc.RasterizerState = { D3D12_FILL_MODE_SOLID, cullMode == CM_CCW ? D3D12_CULL_MODE_BACK : cullMode == CM_CW ? D3D12_CULL_MODE_FRONT : D3D12_CULL_MODE_NONE };
-	psoDesc.BlendState = bd;
 	psoDesc.DepthStencilState.DepthEnable = FALSE;
 	psoDesc.DepthStencilState.StencilEnable = FALSE;
 	psoDesc.SampleMask = UINT_MAX;

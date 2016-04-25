@@ -23,5 +23,5 @@ VsOutput VSMain(VsInput inp)
 
 float4 PSMain(VsOutput inp) : SV_TARGET
 {
-	return float4(inp.col, 1);
+	return float4(inp.col, 0.5);
 }
