@@ -110,7 +110,7 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)
 {
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.MipLevels = 1;
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.Format = format;
 	textureDesc.Width = size.x;
 	textureDesc.Height = size.y;
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -124,7 +124,9 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)
 	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&prop, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&id));
 	TexDesc texDesc;
 	texDesc.size = size;
-	afWriteTexture(id, texDesc, image);
+	if (image) {
+		afWriteTexture(id, texDesc, image);
+	}
 	return id;
 }
 

@@ -6,6 +6,7 @@ class DeviceManDX12
 	ComPtr<IDXGISwapChain3> swapChain;
 	ComPtr<ID3D12Resource> renderTargets[numFrameBuffers];
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
+	ComPtr<ID3D12Resource> depthStencil;
 	ComPtr<ID3D12CommandQueue> commandQueue;
 	ComPtr<ID3D12CommandAllocator> commandAllocator;
 	ComPtr<ID3D12GraphicsCommandList> commandList;

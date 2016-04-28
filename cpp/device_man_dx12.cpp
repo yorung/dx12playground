@@ -36,6 +36,7 @@ void DeviceManDX12::Destroy()
 		renderTargets[i].Reset();
 	}
 	rtvHeap.Reset();
+	depthStencil.Reset();
 	factory.Reset();
 	fence.Reset();
 	fenceValue = 1;
@@ -191,6 +192,9 @@ void DeviceManDX12::Create(HWND hWnd)
 		rtvHandle.ptr += i * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		device->CreateRenderTargetView(renderTargets[i].Get(), nullptr, rtvHandle);
 	}
+
+	IVec2 size = { (int)sd.BufferDesc.Width, (int)sd.BufferDesc.Height };
+	depthStencil = afCreateTexture2D(AFDT_DEPTH_STENCIL, size);
 
 	factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
 	device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator));

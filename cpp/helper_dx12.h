@@ -133,7 +133,7 @@ typedef DXGI_FORMAT AFDTFormat;
 #define AFDT_BC2_UNORM DXGI_FORMAT_BC2_UNORM
 #define AFDT_BC3_UNORM DXGI_FORMAT_BC3_UNORM
 
-SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image);
+SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image = nullptr);
 SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
 void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
 
