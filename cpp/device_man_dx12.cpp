@@ -19,6 +19,8 @@ DeviceManDX12::~DeviceManDX12()
 		assert(!renderTargets[i]);
 	}
 	assert(!rtvHeap);
+	assert(!depthStencil);
+	assert(!dsvHeap);
 }
 
 void DeviceManDX12::Destroy()
@@ -37,6 +39,7 @@ void DeviceManDX12::Destroy()
 	}
 	rtvHeap.Reset();
 	depthStencil.Reset();
+	dsvHeap.Reset();
 	factory.Reset();
 	fence.Reset();
 	fenceValue = 1;
@@ -62,11 +65,13 @@ void DeviceManDX12::WaitForPreviousFrame()
 
 void DeviceManDX12::SetRenderTarget()
 {
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 	rtvHandle.ptr += frameIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	const float clearColor[] = { 0.0f, 0.2f, 0.3f, 1.0f };
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 }
 
 void DeviceManDX12::BeginScene()
@@ -178,10 +183,7 @@ void DeviceManDX12::Create(HWND hWnd)
 		return;
 	}
 
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = numFrameBuffers;
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, numFrameBuffers };
 	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	for (int i = 0; i < numFrameBuffers; i++) {
 		if (S_OK != deviceMan.GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&renderTargets[i]))) {
@@ -195,6 +197,11 @@ void DeviceManDX12::Create(HWND hWnd)
 
 	IVec2 size = { (int)sd.BufferDesc.Width, (int)sd.BufferDesc.Height };
 	depthStencil = afCreateTexture2D(AFDT_DEPTH_STENCIL, size);
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
+	device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	device->CreateDepthStencilView(depthStencil.Get(), nullptr, dsvHandle);
 
 	factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
 	device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator));

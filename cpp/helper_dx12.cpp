@@ -113,7 +113,7 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)
 	textureDesc.Format = format;
 	textureDesc.Width = size.x;
 	textureDesc.Height = size.y;
-	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	textureDesc.Flags = (format == AFDT_DEPTH || format == AFDT_DEPTH_STENCIL) ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_NONE;
 	textureDesc.DepthOrArraySize = 1;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
