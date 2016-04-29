@@ -34,7 +34,7 @@ void Triangle::Create()
 	ubo = afCreateUBO(sizeof(Mat));
 	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
 	rootSignature = afCreateRootSignature(1, descs, 0, nullptr);
-	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_ALPHA, DSM_DISABLE, CM_DISABLE, rootSignature);
+	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature);
 	SRVID srv[] = {
 		ubo,
 	};
