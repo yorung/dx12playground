@@ -20,8 +20,8 @@ static Vertex vertices[] = {
 
 void Triangle::Draw()
 {
-	afSetDescriptorHeap(heap);
 	afSetPipeline(pipelineState, rootSignature);
+	afSetDescriptorHeap(heap);
 	afSetVertexBuffer(vbo, sizeof(Vertex));
 	afDraw(PT_TRIANGLELIST, 3);
 }
