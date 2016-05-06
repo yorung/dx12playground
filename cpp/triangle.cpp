@@ -17,6 +17,9 @@ static Vertex vertices[] = {
 	{ Vec3(-1, -1, 0), Vec3(0, 1, 1) },
 	{ Vec3(1, -1, 0), Vec3(1, 0, 1) },
 };
+static AFIndex indices[] = {
+	0, 1, 2
+};
 
 void Triangle::Draw()
 {
@@ -26,7 +29,8 @@ void Triangle::Draw()
 	afSetPipeline(pipelineState, rootSignature);
 	afSetDescriptorHeap(heap);
 	afSetVertexBuffer(vbo, sizeof(Vertex));
-	afDraw(PT_TRIANGLELIST, 3);
+	afSetIndexBuffer(ibo);
+	afDrawIndexed(PT_TRIANGLELIST, 3);
 }
 
 void Triangle::Create()
@@ -36,6 +40,7 @@ void Triangle::Create()
 	};
 	ubo = afCreateUBO(sizeof(Mat));
 	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
+	ibo = afCreateIndexBuffer(indices, _countof(indices));
 	rootSignature = afCreateRootSignature(1, descs, 0, nullptr);
 	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature);
 	SRVID srv[] = {
@@ -47,6 +52,7 @@ void Triangle::Create()
 void Triangle::Destroy()
 {
 	vbo.Reset();
+	ibo.Reset();
 	ubo.Reset();
 	rootSignature.Reset();
 	pipelineState.Reset();

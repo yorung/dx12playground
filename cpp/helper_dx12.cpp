@@ -41,6 +41,14 @@ void afSetVertexBuffer(VBOID id, int stride)
 	list->IASetVertexBuffers(0, 1, &vertexBufferView);
 }
 
+void afSetIndexBuffer(IBOID id)
+{
+	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
+	D3D12_RESOURCE_DESC desc = id->GetDesc();
+	D3D12_INDEX_BUFFER_VIEW indexBufferView = { id->GetGPUVirtualAddress(), (UINT)desc.Width, AFIndexTypeToDevice };
+	list->IASetIndexBuffer(&indexBufferView);
+}
+
 void afWriteBuffer(const IBOID id, const void* buf, int size)
 {
 #ifdef _DEBUG
