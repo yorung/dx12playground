@@ -75,7 +75,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE,
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DX12PLAYGROUND));
 
-	deviceMan.Create(hWnd);
 
 	int lastW = 0;
 	int lastH = 0;
@@ -94,10 +93,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE,
 			lastW = w;
 			lastH = h;
 			app.Destroy();
-		//	deviceMan.Destroy();
-		//	deviceMan.Create(hWnd);
+			deviceMan.Destroy();
+			deviceMan.Create(hWnd);
 			app.Init();
-
 		}
 		app.Update();
 		app.Draw();
@@ -154,9 +152,7 @@ BOOL InitInstance(HINSTANCE hInstance)
    {
       return FALSE;
    }
-
    ShowWindow(hWnd, SW_SHOWNORMAL);
-   UpdateWindow(hWnd);
 
    DragAcceptFiles(hWnd, TRUE);
    return TRUE;
