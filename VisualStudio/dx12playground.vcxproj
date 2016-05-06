@@ -154,6 +154,9 @@
     <ClInclude Include="..\cpp\app.h" />
     <ClInclude Include="..\cpp\device_man_dx12.h" />
     <ClInclude Include="..\cpp\dev_camera.h" />
+    <ClInclude Include="..\cpp\dib.h" />
+    <ClInclude Include="..\cpp\font_man.h" />
+    <ClInclude Include="..\cpp\fps.h" />
     <ClInclude Include="..\cpp\helper.h" />
     <ClInclude Include="..\cpp\helper_dx12.h" />
     <ClInclude Include="..\cpp\helper_text.h" />
@@ -169,6 +172,9 @@
     <ClCompile Include="..\cpp\app.cpp" />
     <ClCompile Include="..\cpp\device_man_dx12.cpp" />
     <ClCompile Include="..\cpp\dev_camera.cpp" />
+    <ClCompile Include="..\cpp\dib.cpp" />
+    <ClCompile Include="..\cpp\font_man.cpp" />
+    <ClCompile Include="..\cpp\fps.cpp" />
     <ClCompile Include="..\cpp\helper.cpp" />
     <ClCompile Include="..\cpp\helper_dx12.cpp" />
     <ClCompile Include="..\cpp\helper_win.cpp" />

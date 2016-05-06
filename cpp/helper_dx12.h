@@ -36,8 +36,9 @@ void afSetVertexBuffer(VBOID id, int stride);
 void afSetIndexBuffer(IBOID id);
 void afWriteBuffer(const IBOID id, const void* buf, int size);
 ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf = nullptr);
-VBOID afCreateVertexBuffer(int size, const void* buf);
+VBOID afCreateVertexBuffer(int size, const void* buf = nullptr);
 IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi);
+#define afCreateDynamicVertexBuffer afCreateVertexBuffer
 UBOID afCreateUBO(int size);
 
 enum CullMode {
@@ -137,5 +138,6 @@ typedef DXGI_FORMAT AFDTFormat;
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image = nullptr);
 SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
 void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
+#define afCreateDynamicTexture afCreateTexture2D
 
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);

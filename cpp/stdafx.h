@@ -33,5 +33,9 @@ using Microsoft::WRL::ComPtr;
 #include "dev_camera.h"
 #include "system_misc.h"
 #include "sky_man.h"
+#include "dib.h"
+#include "font_man.h"
+#include "fps.h"
+
 #include "triangle.h"
 #include "app.h"

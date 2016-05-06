@@ -159,3 +159,18 @@ SRVID afLoadTexture(const char* name, TexDesc& desc)
 		return LoadTextureViaOS(name, desc.size);
 	}
 }
+
+IBOID afCreateQuadListIndexBuffer(int numQuads)
+{
+	std::vector<AFIndex> indi;
+	int numIndi = numQuads * 6;
+	indi.resize(numIndi);
+	for (int i = 0; i < numIndi; i++)
+	{
+		static int tbl[] = { 0, 1, 2, 1, 3, 2 };
+		int rectIdx = i / 6;
+		int vertIdx = i % 6;
+		indi[i] = rectIdx * 4 + tbl[vertIdx];
+	}
+	return afCreateIndexBuffer(&indi[0], numIndi);
+}

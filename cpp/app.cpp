@@ -17,6 +17,7 @@ void App::Draw()
 
 	triangle.Draw();
 	skyMan.Draw();
+	fontMan.Render();
 }
 
 void App::Init()
@@ -25,6 +26,7 @@ void App::Init()
 
 	triangle.Create();
 	skyMan.Create("hakodate.jpg", "sky_photosphere");
+	fontMan.Init();
 }
 
 void App::Destroy()
@@ -32,10 +34,13 @@ void App::Destroy()
 	deviceMan.Flush();
 	triangle.Destroy();
 	skyMan.Destroy();
+	fontMan.Destroy();
 }
 
 void App::Update()
 {
 	matrixMan.Set(MatrixMan::VIEW, devCamera.CalcViewMatrix());
 	triangle.Update();
+	fps.Update();
+	fontMan.DrawString(Vec2(20, 40), 20, SPrintf("FPS: %f", fps.Get()));
 }
