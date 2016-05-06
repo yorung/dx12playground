@@ -106,6 +106,9 @@ void DeviceManDX12::EndScene()
 
 void DeviceManDX12::Flush()
 {
+	if (!commandList) {
+		return;
+	}
 	commandList->Close();
 	ID3D12CommandList* lists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(lists), lists);

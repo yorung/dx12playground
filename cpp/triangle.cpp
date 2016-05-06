@@ -20,6 +20,9 @@ static Vertex vertices[] = {
 
 void Triangle::Draw()
 {
+	if (!ubo) {
+		return;
+	}
 	afSetPipeline(pipelineState, rootSignature);
 	afSetDescriptorHeap(heap);
 	afSetVertexBuffer(vbo, sizeof(Vertex));
@@ -52,6 +55,9 @@ void Triangle::Destroy()
 
 void Triangle::Update()
 {
+	if (!ubo) {
+		return;
+	}
 	Mat m;
 	m = q2m(Quat(Vec3(0, 0, 1), (float)GetTime()));
 	afWriteBuffer(ubo, &m, sizeof(m));
