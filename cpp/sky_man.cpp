@@ -14,9 +14,6 @@ SkyMan::~SkyMan()
 void SkyMan::Create(const char *texFileName, const char* shader)
 {
 	Destroy();
-	texId = afLoadTexture(texFileName, texDesc);
-	uboId = afCreateUBO(sizeof(Mat));
-
 	static Descriptor descriptors[] = {
 		CDescriptorCBV(0),
 		CDescriptorSRV(0),
@@ -24,12 +21,15 @@ void SkyMan::Create(const char *texFileName, const char* shader)
 	static Sampler samplers[] = {
 		CSampler(0, SF_LINEAR, SW_REPEAT),
 	};
+	rootSignature = afCreateRootSignature(dimof(descriptors), descriptors, dimof(samplers), samplers);
+	pipelineState = afCreatePSO(shader, nullptr, 0, BM_NONE, DSM_DEPTH_CLOSEREQUAL_READONLY, CM_DISABLE, rootSignature);
+
+	texId = afLoadTexture(texFileName, texDesc);
+	uboId = afCreateUBO(sizeof(Mat));
 	SRVID srvs[] = {
 		uboId,
 		texId,
 	};
-	rootSignature = afCreateRootSignature(dimof(descriptors), descriptors, dimof(samplers), samplers);
-	pipelineState = afCreatePSO(shader, nullptr, 0, BM_NONE, DSM_DEPTH_CLOSEREQUAL_READONLY, CM_DISABLE, rootSignature);
 	heap = afCreateDescriptorHeap(dimof(srvs), srvs);
 }
 
