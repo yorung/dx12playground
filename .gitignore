@@ -10,6 +10,7 @@ bin/
 *.aps
 *.bak
 *.opendb
+*.db
 *.user
 .workspace/
 .project
