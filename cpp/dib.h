@@ -18,7 +18,7 @@ class DIB {
 	bool Create(int w, int h, int bits, int level = 255);
 #ifdef _MSC_VER
 	bool LoadFromBmp(const char *file);
-	HDC getDC() const { return m_hdc; }
+	HDC GetHDC() const { return m_hdc; }
 	bool Blt(HDC target, int dstX, int dstY, int w, int h);
 	void Save(const char* fileName);
 #endif

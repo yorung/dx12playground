@@ -174,3 +174,13 @@ IBOID afCreateQuadListIndexBuffer(int numQuads)
 	}
 	return afCreateIndexBuffer(&indi[0], numIndi);
 }
+
+void afVerify(bool ok)
+{
+	if (ok) {
+		return;
+	}
+	aflog("afVerify: Fatal");
+	while (strlen(" ")) {
+	}
+}

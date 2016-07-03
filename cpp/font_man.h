@@ -1,17 +1,8 @@
 class FontMan
 {
-	struct CharSignature {
-		wchar_t code;
-		int fontSize;
-		inline int GetOrder() const { return (code << 8) | fontSize;}
-		bool operator < (const CharSignature& r) const { return GetOrder() < r.GetOrder(); }
-		bool operator == (const CharSignature& r) const { return GetOrder() == r.GetOrder(); }
-	};
 	struct CharCache {
 		Vec2 srcPos;
-		Vec2 srcWidth;
-		Vec2 distDelta;
-		float step;
+		CharDesc desc;
 	};
 	struct CharSprite {
 		Vec2 pos;
@@ -37,7 +28,6 @@ class FontMan
 	bool Cache(const CharSignature& code);
 	void DrawChar(Vec2& pos, const CharSignature& sig);
 	void ClearCache();
-	void MakeFontBitmap(const char* fontName, const CharSignature& code, DIB& dib, CharCache& cache) const;
 public:
 	FontMan();
 	~FontMan();

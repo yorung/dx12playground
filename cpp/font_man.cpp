@@ -1,8 +1,5 @@
 #include "stdafx.h"
 
-#define IS_HANGUL(c)	( (c) >= 0xAC00 && (c) <= 0xD7A3 )
-#define IS_HANGUL2(c)	( ( (c) >= 0x3130 && (c) <= 0x318F ) || IS_HANGUL(c) )	// hangul + jamo
-
 #define TEX_W		512
 #define TEX_H		512
 
@@ -20,95 +17,6 @@ static Vec2 fontVertAlign[] =
 	Vec2(0, 1),
 	Vec2(1, 1),
 };
-
-#ifdef _MSC_VER
-static bool isKorean(int code)
-{
-	return IS_HANGUL2(code) || code < 0x80;
-}
-
-static HFONT CreateAsianFont(int code, int height)
-{
-	BOOL isK = isKorean(code);
-	const char *fontName = isK ? "Gulim" : "MS Gothic";
-	const DWORD charset = isK ? HANGUL_CHARSET : SHIFTJIS_CHARSET;
-	return CreateFontA(height,			// Height Of Font
-		0,								// Width Of Font
-		0,								// Angle Of Escapement
-		0,								// Orientation Angle
-		FW_MEDIUM,						// Font Weight
-		FALSE,							// Italic
-		FALSE,							// Underline
-		FALSE,							// Strikeout
-		charset,						// Character Set Identifier
-		OUT_TT_PRECIS,					// Output Precision
-		CLIP_DEFAULT_PRECIS,			// Clipping Precision
-		ANTIALIASED_QUALITY,			// Output Quality
-		FF_DONTCARE | DEFAULT_PITCH,	// Family And Pitch
-		fontName);						// Font Name
-}
-#endif
-
-
-
-
-static void afVerify(bool ok) {
-	if (ok) {
-		return;
-	}
-	aflog("afVerify: Fatal");
-	while(strlen(" ")) {
-	}
-}
-
-#ifndef _MSC_VER
-void FontMan::MakeFontBitmap(const char* fontName, const CharSignature& sig, DIB& dib, CharCache& cache) const
-{
-	int code = sig.code;
-
-	jclass myview = jniEnv->FindClass(boundJavaClass);
-	jmethodID method = jniEnv->GetStaticMethodID(myview, "makeFontBitmap", "(Ljava/lang/String;Ljava/lang/String;I[F)[B");
-//	jmethodID method = jniEnv->GetStaticMethodID(myview, "makeFontBitmap", "(Ljava/lang/String;II)[B");
-	if (method == 0) {
-		aflog("Java method not found!");
-		afVerify(false);
-	}
-
-	jchar codeInUnicode[2] = {(jchar)code, 0};
-
-	jfloatArray floatArray = jniEnv->NewFloatArray(5);
-	jobject arrayAsJObject = jniEnv->CallStaticObjectMethod(myview, method, jniEnv->NewStringUTF(fontName), jniEnv->NewString(codeInUnicode, 1), (jint)sig.fontSize, floatArray);
-//	aflog("Java method called and returned");
-
-	{
-		jfloat* pFloatArray = jniEnv->GetFloatArrayElements(floatArray, NULL);
-		cache.distDelta = Vec2(pFloatArray[0], pFloatArray[1]);
-		cache.srcWidth = Vec2(pFloatArray[2], pFloatArray[3]);
-		cache.step = pFloatArray[4];
-		jniEnv->ReleaseFloatArrayElements(floatArray, pFloatArray, 0);
-	}
-	if (!arrayAsJObject) {
-//		aflog("Java method returned null; it's white space");
-		return;
-	}
-
-	jbyteArray array = (jbyteArray)arrayAsJObject;
-	jbyte* byteArray = jniEnv->GetByteArrayElements(array, NULL);
-	jsize arrayLen = jniEnv->GetArrayLength(array);
-//	aflog("arrayLen=%d", arrayLen);
-
-	int expectedLen = cache.srcWidth.x * cache.srcWidth.y * 4;
-	if (arrayLen != expectedLen) {
-//		aflog("wrong size! returned=%d expected=%d", arrayLen, expectedLen);
-		afVerify(false);
-	} else {
-		dib.Create(cache.srcWidth.x, cache.srcWidth.y, 32);
-		memcpy(dib.ReferPixels(), byteArray, arrayLen);
-	}
-	jniEnv->ReleaseByteArrayElements(array, byteArray, 0);
-	dib.DibToDXFont();
-}
-#endif
 
 FontMan::FontMan()
 {
@@ -171,66 +79,11 @@ void FontMan::Destroy()
 	ClearCache();
 }
 
-#ifdef _MSC_VER
-void FontMan::MakeFontBitmap(const char* fontName, const CharSignature& sig, DIB& dib, CharCache& cache) const
-{
-	bool result = false;
-
-	HFONT font = CreateAsianFont(sig.code, sig.fontSize);
-	assert(font);
-
-	dib.Clear();
-	wchar_t buf[] = { sig.code, '\0' };
-	HDC hdc = texSrc.getDC();
-	assert(hdc);
-	HFONT oldFont = (HFONT)SelectObject(hdc, font);
-	const MAT2 mat = { {0,1}, {0,0}, {0,0}, {0,1} };
-	GLYPHMETRICS met;
-	memset(&met, 0, sizeof(met));
-	DWORD sizeReq = GetGlyphOutlineW(hdc, (UINT)sig.code, GGO_GRAY8_BITMAP, &met, 0, nullptr, &mat);
-	if (sizeReq) {
-		DIB dib3;
-		afVerify(dib3.Create(met.gmBlackBoxX, met.gmBlackBoxY, 8, 64));
-		afVerify(dib.Create(met.gmBlackBoxX, met.gmBlackBoxY));
-		int sizeBuf = dib3.GetByteSize();
-		if (sizeReq != sizeBuf) {
-			aflog("FontMan::Build() buf size mismatch! code=%d req=%d dib=%d\n", sig.code, sizeReq, sizeBuf);
-			int fakeBlackBoxY = met.gmBlackBoxY + 1;
-			afVerify(dib3.Create(met.gmBlackBoxX, fakeBlackBoxY, 8, 64));
-			afVerify(dib.Create(met.gmBlackBoxX, fakeBlackBoxY));
-			int sizeBuf = dib3.GetByteSize();
-			if (sizeReq != sizeBuf) {
-				afVerify(false);
-			} else {
-				aflog("FontMan::Build() buf size matched by increasing Y, but it is an awful workaround. code=%d req=%d dib=%d\n", sig.code, sizeReq, sizeBuf);
-			}
-		}
-		memset(&met, 0, sizeof(met));
-		GetGlyphOutlineW(hdc, (UINT)sig.code, GGO_GRAY8_BITMAP, &met, sizeReq, dib3.ReferPixels(), &mat);
-	//	SetTextColor(hdc, RGB(255, 255, 255));
-	//	SetBkColor(hdc, RGB(0, 0, 0));
-	//	TextOutW(hdc, 0, 0, buf, wcslen(buf));
-		dib3.Blt(dib.getDC(), 0, 0, dib3.getW(), dib3.getH());
-	//	dib.Save(SPrintf("../ScreenShot/%04x.bmp", sig.code));
-		dib.DibToDXFont();
-	}
-	SelectObject(hdc, (HGDIOBJ)oldFont);
-	if (font) {
-		DeleteObject(font);
-	}
-
-	cache.srcPos = Vec2((float)curX, (float)curY);
-	cache.srcWidth = Vec2((float)met.gmBlackBoxX, (float)met.gmBlackBoxY);
-	cache.step = (float)met.gmCellIncX;
-	cache.distDelta = Vec2((float)met.gmptGlyphOrigin.x, (float)-met.gmptGlyphOrigin.y);
-}
-#endif
-
 bool FontMan::Build(const CharSignature& signature)
 {
 	DIB	dib;
 	CharCache cache;
-	MakeFontBitmap("Gulim", signature, dib, cache);
+	MakeFontBitmap("Gulim", signature, dib, cache.desc);
 	int remainX = texSrc.getW() - curX;
 	if (remainX < dib.getW()) {
 		curX = 0;
@@ -255,7 +108,7 @@ bool FontMan::Build(const CharSignature& signature)
 	//snprintf(codestr, dimof(codestr), "%04x %c", signature.code, signature.code < 0x80 ? signature.code : 0x20);
 	//aflog("FontMan::Build() curX=%d curY=%d dib.getW()=%d dib.getH()=%d code=%s\n", curX, curY, dib.getW(), dib.getH(), codestr);
 
-	curX += (int)std::ceil(cache.srcWidth.x);
+	curX += (int)std::ceil(cache.desc.srcWidth.x);
 	caches[signature] = cache;
 	return true;
 }
@@ -305,8 +158,8 @@ void FontMan::Render()
 		}
 		const CharCache& cc = it->second;
 		for (int j = 0; j < (int)dimof(fontVertAlign); j++) {
-			verts[i * 4 + j].pos = (((cs.pos + cc.distDelta + fontVertAlign[j] * cc.srcWidth)) * Vec2(2, -2)) / scrSize + Vec2(-1, 1);
-			verts[i * 4 + j].coord = (cc.srcPos + fontVertAlign[j] * cc.srcWidth) / Vec2(TEX_W, TEX_H);
+			verts[i * 4 + j].pos = (((cs.pos + cc.desc.distDelta + fontVertAlign[j] * cc.desc.srcWidth)) * Vec2(2, -2)) / scrSize + Vec2(-1, 1);
+			verts[i * 4 + j].coord = (cc.srcPos + fontVertAlign[j] * cc.desc.srcWidth) / Vec2(TEX_W, TEX_H);
 		}
 	}
 	afWriteBuffer(vbo, verts, 4 * numSprites * sizeof(FontVertex));
@@ -337,7 +190,7 @@ void FontMan::DrawChar(Vec2& pos, const CharSignature& sig)
 
 	Caches::iterator it = caches.find(sig);
 	if (it != caches.end()) {
-		pos.x += it->second.step;
+		pos.x += it->second.desc.step;
 	}
 }
 
@@ -354,9 +207,9 @@ Vec2 FontMan::MeasureString(int fontSize, const char *text)
 		Cache(sig);
 		Caches::iterator it = caches.find(sig);
 		if (it != caches.end()) {
-			size.y = std::max(size.y, it->second.srcWidth.y);
-			size.x = pos.x + it->second.distDelta.x + it->second.srcWidth.x;
-			pos.x += it->second.step;
+			size.y = std::max(size.y, it->second.desc.srcWidth.y);
+			size.x = pos.x + it->second.desc.distDelta.x + it->second.desc.srcWidth.x;
+			pos.x += it->second.desc.step;
 		}
 	}
 	return size;

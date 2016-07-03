@@ -165,4 +165,86 @@ SRVID LoadTextureViaOS(const char* name, IVec2& size)
 	return afCreateTexture2D(AFDT_R8G8B8A8_UNORM, size, &col[0]);
 }
 
+#define IS_HANGUL(c)	( (c) >= 0xAC00 && (c) <= 0xD7A3 )
+#define IS_HANGUL2(c)	( ( (c) >= 0x3130 && (c) <= 0x318F ) || IS_HANGUL(c) )	// hangul + jamo
+
+static bool isKorean(int code)
+{
+	return IS_HANGUL2(code) || code < 0x80;
+}
+
+static HFONT CreateAsianFont(int code, int height)
+{
+	BOOL isK = isKorean(code);
+	const char *fontName = isK ? "Gulim" : "MS Gothic";
+	const DWORD charset = isK ? HANGUL_CHARSET : SHIFTJIS_CHARSET;
+	return CreateFontA(height,			// Height Of Font
+		0,								// Width Of Font
+		0,								// Angle Of Escapement
+		0,								// Orientation Angle
+		FW_MEDIUM,						// Font Weight
+		FALSE,							// Italic
+		FALSE,							// Underline
+		FALSE,							// Strikeout
+		charset,						// Character Set Identifier
+		OUT_TT_PRECIS,					// Output Precision
+		CLIP_DEFAULT_PRECIS,			// Clipping Precision
+		ANTIALIASED_QUALITY,			// Output Quality
+		FF_DONTCARE | DEFAULT_PITCH,	// Family And Pitch
+		fontName);						// Font Name
+}
+
+void MakeFontBitmap(const char* fontName, const CharSignature& sig, DIB& dib, CharDesc& cache)
+{
+	bool result = false;
+
+	HFONT font = CreateAsianFont(sig.code, sig.fontSize);
+	assert(font);
+
+	dib.Clear();
+	wchar_t buf[] = { sig.code, '\0' };
+	HDC hdc = GetDC(nullptr);
+	assert(hdc);
+	HFONT oldFont = (HFONT)SelectObject(hdc, font);
+	const MAT2 mat = { { 0,1 },{ 0,0 },{ 0,0 },{ 0,1 } };
+	GLYPHMETRICS met;
+	memset(&met, 0, sizeof(met));
+	DWORD sizeReq = GetGlyphOutlineW(hdc, (UINT)sig.code, GGO_GRAY8_BITMAP, &met, 0, nullptr, &mat);
+	if (sizeReq) {
+		DIB dib3;
+		afVerify(dib3.Create(met.gmBlackBoxX, met.gmBlackBoxY, 8, 64));
+		afVerify(dib.Create(met.gmBlackBoxX, met.gmBlackBoxY));
+		int sizeBuf = dib3.GetByteSize();
+		if (sizeReq != sizeBuf) {
+			aflog("FontMan::Build() buf size mismatch! code=%d req=%d dib=%d\n", sig.code, sizeReq, sizeBuf);
+			int fakeBlackBoxY = met.gmBlackBoxY + 1;
+			afVerify(dib3.Create(met.gmBlackBoxX, fakeBlackBoxY, 8, 64));
+			afVerify(dib.Create(met.gmBlackBoxX, fakeBlackBoxY));
+			int sizeBuf = dib3.GetByteSize();
+			if (sizeReq != sizeBuf) {
+				afVerify(false);
+			} else {
+				aflog("FontMan::Build() buf size matched by increasing Y, but it is an awful workaround. code=%d req=%d dib=%d\n", sig.code, sizeReq, sizeBuf);
+			}
+		}
+		memset(&met, 0, sizeof(met));
+		GetGlyphOutlineW(hdc, (UINT)sig.code, GGO_GRAY8_BITMAP, &met, sizeReq, dib3.ReferPixels(), &mat);
+		//	SetTextColor(hdc, RGB(255, 255, 255));
+		//	SetBkColor(hdc, RGB(0, 0, 0));
+		//	TextOutW(hdc, 0, 0, buf, wcslen(buf));
+		dib3.Blt(dib.GetHDC(), 0, 0, dib3.getW(), dib3.getH());
+		//	dib.Save(SPrintf("../ScreenShot/%04x.bmp", sig.code));
+		dib.DibToDXFont();
+	}
+	SelectObject(hdc, (HGDIOBJ)oldFont);
+	if (font) {
+		DeleteObject(font);
+	}
+	ReleaseDC(nullptr, hdc);
+
+	cache.srcWidth = Vec2((float)met.gmBlackBoxX, (float)met.gmBlackBoxY);
+	cache.step = (float)met.gmCellIncX;
+	cache.distDelta = Vec2((float)met.gmptGlyphOrigin.x, (float)-met.gmptGlyphOrigin.y);
+}
+
 #endif
