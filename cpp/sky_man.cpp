@@ -4,11 +4,9 @@ SkyMan skyMan;
 
 SkyMan::~SkyMan()
 {
-	assert(!uboId);
 	assert(!texId);
 	assert(!rootSignature);
 	assert(!pipelineState);
-	assert(!heap);
 }
 
 void SkyMan::Create(const char *texFileName, const char* shader)
@@ -25,12 +23,6 @@ void SkyMan::Create(const char *texFileName, const char* shader)
 	pipelineState = afCreatePSO(shader, nullptr, 0, BM_NONE, DSM_DEPTH_CLOSEREQUAL_READONLY, CM_DISABLE, rootSignature);
 
 	texId = afLoadTexture(texFileName, texDesc);
-	uboId = afCreateUBO(sizeof(Mat));
-	SRVID srvs[] = {
-		uboId,
-		texId,
-	};
-	heap = afCreateDescriptorHeap(dimof(srvs), srvs);
 }
 
 void SkyMan::Draw()
@@ -38,15 +30,11 @@ void SkyMan::Draw()
 	if (!texId) {
 		return;
 	}
-	if (!uboId) {
-		return;
-	}
 	if (!pipelineState) {
 		return;
 	}
 
 	afSetPipeline(pipelineState, rootSignature);
-	afSetDescriptorHeap(heap);
 
 	Mat matV, matP;
 	matrixMan.Get(MatrixMan::VIEW, matV);
@@ -54,15 +42,17 @@ void SkyMan::Draw()
 	matV._41 = matV._42 = matV._43 = 0;
 	Mat invVP = inv(matV * matP);
 
-	afWriteBuffer(uboId, &invVP, sizeof(invVP));
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(2);
+	deviceMan.AssignConstantBuffer(descriptorHeapIndex, &invVP, sizeof(invVP));
+	deviceMan.AssignSRV(descriptorHeapIndex + 1, texId);
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+
 	afDraw(PT_TRIANGLESTRIP, 4);
 }
 
 void SkyMan::Destroy()
 {
-	afSafeDeleteBuffer(uboId);
 	afSafeDeleteTexture(texId);
 	pipelineState.Reset();
 	rootSignature.Reset();
-	heap.Reset();
 }

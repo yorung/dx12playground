@@ -20,7 +20,6 @@ class FontMan
 	int numSprites;
 	ComPtr<ID3D12RootSignature> rootSignature;
 	ComPtr<ID3D12PipelineState> pipelineState;
-	ComPtr<ID3D12DescriptorHeap> heap;
 	IBOID ibo;
 	VBOID vbo;
 	bool dirty = false;

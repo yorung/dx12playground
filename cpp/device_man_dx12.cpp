@@ -21,6 +21,8 @@ DeviceManDX12::~DeviceManDX12()
 	assert(!rtvHeap);
 	assert(!depthStencil);
 	assert(!dsvHeap);
+	assert(!srvHeap);
+	assert(!constantBuffer);
 }
 
 void DeviceManDX12::Destroy()
@@ -40,6 +42,12 @@ void DeviceManDX12::Destroy()
 	rtvHeap.Reset();
 	depthStencil.Reset();
 	dsvHeap.Reset();
+	srvHeap.Reset();
+	mappedConstantBuffer = nullptr;
+	if (constantBuffer) {
+		constantBuffer->Unmap(0, nullptr);
+	}
+	constantBuffer.Reset();
 	factory.Reset();
 	fence.Reset();
 	fenceValue = 1;
@@ -77,6 +85,8 @@ void DeviceManDX12::SetRenderTarget()
 void DeviceManDX12::BeginScene()
 {
 	WaitForPreviousFrame();
+	numAssignedSrvs = 0;
+	numAssignedConstantBufferBlocks = 0;
 	commandAllocator->Reset();
 	commandList->Reset(commandAllocator.Get(), nullptr);
 	frameIndex = deviceMan.GetSwapChain()->GetCurrentBackBufferIndex();
@@ -115,6 +125,57 @@ void DeviceManDX12::Flush()
 	WaitForPreviousFrame();
 	commandAllocator->Reset();
 	commandList->Reset(commandAllocator.Get(), nullptr);
+}
+
+int DeviceManDX12::AssignDescriptorHeap(int numRequired)
+{
+	int tmp = numAssignedSrvs;
+	numAssignedSrvs += numRequired;
+	if (numAssignedSrvs > maxSrvs) {
+		assert(0);
+		return -1;
+	}
+	return tmp;
+}
+
+void DeviceManDX12::AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> res)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE ptr = srvHeap->GetCPUDescriptorHandleForHeapStart();
+	ptr.ptr += deviceMan.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
+	deviceMan.GetDevice()->CreateShaderResourceView(res.Get(), nullptr, ptr);
+}
+
+void DeviceManDX12::AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size)
+{
+	int sizeAligned = (size + 0xff) & ~0xff;
+	int numRequired = sizeAligned / 0x100;
+
+	int top = numAssignedConstantBufferBlocks;
+	numAssignedConstantBufferBlocks += numRequired;
+	if (numAssignedConstantBufferBlocks > maxConstantBufferBlocks) {
+		assert(0);
+		return;
+	}
+
+	memcpy(mappedConstantBuffer + top, buf, size);
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = constantBuffer->GetGPUVirtualAddress() + top * 0x100;
+	cbvDesc.SizeInBytes = sizeAligned;
+	assert((cbvDesc.SizeInBytes & 0xff) == 0);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE ptr = srvHeap->GetCPUDescriptorHandleForHeapStart();
+	ptr.ptr += deviceMan.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
+	deviceMan.GetDevice()->CreateConstantBufferView(&cbvDesc, ptr);
+}
+
+void DeviceManDX12::SetAssignedDescriptorHeap(int descriptorHeapIndex)
+{
+	ID3D12DescriptorHeap* ppHeaps[] = { srvHeap.Get() };
+	deviceMan.GetCommandList()->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	D3D12_GPU_DESCRIPTOR_HANDLE addr = srvHeap->GetGPUDescriptorHandleForHeapStart();
+	addr.ptr += descriptorHeapIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	deviceMan.GetCommandList()->SetGraphicsRootDescriptorTable(0, addr);
 }
 
 void DeviceManDX12::Present()
@@ -186,7 +247,16 @@ void DeviceManDX12::Create(HWND hWnd)
 		return;
 	}
 
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, numFrameBuffers };
+	constantBuffer = afCreateUBO(maxConstantBufferBlocks * 0x100);
+	D3D12_RANGE readRange = {};
+	HRESULT hr = constantBuffer->Map(0, &readRange, (void**)&mappedConstantBuffer);
+	assert(hr == S_OK);
+	assert(mappedConstantBuffer);
+
+	const D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxSrvs, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE };
+	device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
+
+	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, numFrameBuffers };
 	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	for (int i = 0; i < numFrameBuffers; i++) {
 		if (S_OK != deviceMan.GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&renderTargets[i]))) {
@@ -201,7 +271,7 @@ void DeviceManDX12::Create(HWND hWnd)
 	IVec2 size = { (int)sd.BufferDesc.Width, (int)sd.BufferDesc.Height };
 	depthStencil = afCreateTexture2D(AFDT_DEPTH_STENCIL, size);
 
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
+	const D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
 	device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	device->CreateDepthStencilView(depthStencil.Get(), nullptr, dsvHandle);

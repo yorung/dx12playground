@@ -40,7 +40,6 @@ void App::Destroy()
 void App::Update()
 {
 	matrixMan.Set(MatrixMan::VIEW, devCamera.CalcViewMatrix());
-	triangle.Update();
 	fps.Update();
 	fontMan.DrawString(Vec2(20, 40), 20, SPrintf("FPS: %f", fps.Get()));
 }

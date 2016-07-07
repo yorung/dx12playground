@@ -56,10 +56,6 @@ bool FontMan::Init()
 	}
 	texture = afCreateDynamicTexture(AFDT_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
 	
-	SRVID srv[] = {
-		texture,
-	};
-	heap = afCreateDescriptorHeap(_countof(srv), srv);
 	ibo = afCreateQuadListIndexBuffer(SPRITE_MAX);
 	vbo = afCreateDynamicVertexBuffer(SPRITE_MAX * sizeof(FontVertex) * 4);
 	int stride = sizeof(FontVertex);
@@ -72,7 +68,6 @@ void FontMan::Destroy()
 	afSafeDeleteTexture(texture);
 	pipelineState.Reset();
 	rootSignature.Reset();
-	heap.Reset();
 	texSrc.Destroy();
 	afSafeDeleteBuffer(ibo);
 	afSafeDeleteBuffer(vbo);
@@ -164,7 +159,11 @@ void FontMan::Render()
 	}
 	afWriteBuffer(vbo, verts, 4 * numSprites * sizeof(FontVertex));
 	afSetPipeline(pipelineState, rootSignature);
-	afSetDescriptorHeap(heap);
+
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
+	deviceMan.AssignSRV(descriptorHeapIndex, texture);
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+
 	afSetVertexBuffer(vbo, sizeof(FontVertex));
 	afSetIndexBuffer(ibo);
 	afDrawIndexed(PT_TRIANGLELIST, numSprites * 6);
