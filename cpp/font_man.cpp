@@ -42,10 +42,10 @@ static InputElement elements[] = {
 bool FontMan::Init()
 {
 	Destroy();
-	static Descriptor descriptors[] = {
+	static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 		CDescriptorSRV(0),
 	};
-	static Sampler samplers[] = {
+	static D3D12_STATIC_SAMPLER_DESC samplers[] = {
 		CSampler(0, SF_POINT, SW_REPEAT),
 	};
 	rootSignature = afCreateRootSignature(_countof(descriptors), descriptors, _countof(samplers), samplers);

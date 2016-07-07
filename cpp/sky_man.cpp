@@ -14,11 +14,11 @@ SkyMan::~SkyMan()
 void SkyMan::Create(const char *texFileName, const char* shader)
 {
 	Destroy();
-	static Descriptor descriptors[] = {
+	static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 		CDescriptorCBV(0),
 		CDescriptorSRV(0),
 	};
-	static Sampler samplers[] = {
+	static D3D12_STATIC_SAMPLER_DESC samplers[] = {
 		CSampler(0, SF_LINEAR, SW_REPEAT),
 	};
 	rootSignature = afCreateRootSignature(dimof(descriptors), descriptors, dimof(samplers), samplers);

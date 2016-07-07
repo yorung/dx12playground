@@ -35,7 +35,7 @@ void Triangle::Draw()
 
 void Triangle::Create()
 {
-	Descriptor descs[] = {
+	D3D12_DESCRIPTOR_RANGE descs[] = {
 		CDescriptorCBV(0),
 	};
 	ubo = afCreateUBO(sizeof(Mat));

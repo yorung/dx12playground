@@ -65,8 +65,6 @@ enum DepthStencilMode {
 #define SF_LINEAR D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT
 #define SF_MIPMAP D3D12_FILTER_MIN_MAG_MIP_LINEAR
 
-typedef D3D12_STATIC_SAMPLER_DESC Sampler;
-
 class CSampler : public D3D12_STATIC_SAMPLER_DESC
 {
 public:
@@ -88,8 +86,7 @@ public:
 	}
 };
 
-typedef D3D12_DESCRIPTOR_RANGE Descriptor;
-class CDescriptorCBV : public Descriptor {
+class CDescriptorCBV : public D3D12_DESCRIPTOR_RANGE {
 public:
 	CDescriptorCBV(int shaderRegister) {
 		RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
@@ -100,7 +97,7 @@ public:
 	}
 };
 
-class CDescriptorSRV : public Descriptor {
+class CDescriptorSRV : public D3D12_DESCRIPTOR_RANGE {
 public:
 	CDescriptorSRV(int shaderRegister) {
 		RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -112,7 +109,7 @@ public:
 };
 
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature);
-ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, Descriptor descriptors[], int numSamplers, Sampler samplers[]);
+ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, D3D12_STATIC_SAMPLER_DESC samplers[]);
 
 #define PrimitiveTopology D3D_PRIMITIVE_TOPOLOGY
 #define PT_TRIANGLESTRIP D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP

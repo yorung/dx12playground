@@ -60,9 +60,8 @@ void afWriteBuffer(const IBOID id, const void* buf, int size)
 	void* p;
 	D3D12_RANGE readRange = {};
 	HRESULT hr = id->Map(0, &readRange, &p);
-	if (hr != S_OK || !p) {
-		GetTickCount64();
-	}
+	assert(hr == S_OK);
+	assert(p);
 	memcpy(p, buf, size);
 	D3D12_RANGE wroteRange = {0, (SIZE_T)size};
 	id->Unmap(0, &wroteRange);
@@ -202,7 +201,7 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	return pso;
 }
 
-ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, Descriptor descriptors[], int numSamplers, Sampler samplers[])
+ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, D3D12_STATIC_SAMPLER_DESC samplers[])
 {
 	ComPtr<ID3D12RootSignature> rs;
 	ComPtr<ID3DBlob> signature;
