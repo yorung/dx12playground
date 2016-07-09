@@ -115,12 +115,13 @@ void afWriteTexture(SRVID id, const TexDesc& desc, const void* buf)
 
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)
 {
+	bool isDepthStencil = format == AFDT_DEPTH || format == AFDT_DEPTH_STENCIL;
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.MipLevels = 1;
 	textureDesc.Format = format;
 	textureDesc.Width = size.x;
 	textureDesc.Height = size.y;
-	textureDesc.Flags = (format == AFDT_DEPTH || format == AFDT_DEPTH_STENCIL) ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_NONE;
+	textureDesc.Flags = isDepthStencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_NONE;
 	textureDesc.DepthOrArraySize = 1;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
@@ -128,7 +129,11 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)
 
 	SRVID id;
 	D3D12_HEAP_PROPERTIES prop = { D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
-	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&prop, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, nullptr, IID_PPV_ARGS(&id));
+	D3D12_CLEAR_VALUE clearValue = { format };
+	if (isDepthStencil) {
+		clearValue.DepthStencil.Depth = 1.0f;
+	}
+	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&prop, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, isDepthStencil ? &clearValue : nullptr, IID_PPV_ARGS(&id));
 	TexDesc texDesc;
 	texDesc.size = size;
 	if (image) {
@@ -194,6 +199,7 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.DSVFormat = AFDT_DEPTH_STENCIL;
 	psoDesc.SampleDesc.Count = 1;
 	ComPtr<ID3D12PipelineState> pso;
 	HRESULT hr = deviceMan.GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso));
