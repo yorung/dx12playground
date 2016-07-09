@@ -129,20 +129,20 @@ void DeviceManDX12::Flush()
 
 int DeviceManDX12::AssignDescriptorHeap(int numRequired)
 {
-	int tmp = numAssignedSrvs;
-	numAssignedSrvs += numRequired;
-	if (numAssignedSrvs > maxSrvs) {
+	if (numAssignedSrvs + numRequired > maxSrvs) {
 		assert(0);
 		return -1;
 	}
-	return tmp;
+	int head = numAssignedSrvs;
+	numAssignedSrvs = numAssignedSrvs + numRequired;
+	return head;
 }
 
 void DeviceManDX12::AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> res)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE ptr = srvHeap->GetCPUDescriptorHandleForHeapStart();
-	ptr.ptr += deviceMan.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
-	deviceMan.GetDevice()->CreateShaderResourceView(res.Get(), nullptr, ptr);
+	ptr.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
+	device->CreateShaderResourceView(res.Get(), nullptr, ptr);
 }
 
 void DeviceManDX12::AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size)
@@ -150,12 +150,12 @@ void DeviceManDX12::AssignConstantBuffer(int descriptorHeapIndex, const void* bu
 	int sizeAligned = (size + 0xff) & ~0xff;
 	int numRequired = sizeAligned / 0x100;
 
-	int top = numAssignedConstantBufferBlocks;
-	numAssignedConstantBufferBlocks += numRequired;
-	if (numAssignedConstantBufferBlocks > maxConstantBufferBlocks) {
+	if (numAssignedConstantBufferBlocks + numRequired > maxConstantBufferBlocks) {
 		assert(0);
 		return;
 	}
+	int top = numAssignedConstantBufferBlocks;
+	numAssignedConstantBufferBlocks += numRequired;
 
 	memcpy(mappedConstantBuffer + top, buf, size);
 
