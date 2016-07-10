@@ -5,12 +5,15 @@ class DeviceManDX12
 	static const UINT maxConstantBufferBlocks = 1000;
 	int numAssignedSrvs = 0;
 	int numAssignedConstantBufferBlocks = 0;
-	struct FrameResources {
+	class FrameResources {
+	public:
+		~FrameResources();
 		ComPtr<ID3D12Resource> renderTarget;
 		ComPtr<ID3D12CommandAllocator> commandAllocator;
 		ComPtr<ID3D12Resource> constantBuffer;
 		ComPtr<ID3D12DescriptorHeap> srvHeap;
 		struct { char buf[256]; } *mappedConstantBuffer = nullptr;
+		UINT64 fenceValueToGuard = 0;
 	} frameResources[numFrameBuffers];
 	ComPtr<IDXGIFactory4> factory;
 	ComPtr<ID3D12Device> device;
@@ -24,7 +27,6 @@ class DeviceManDX12
 	UINT frameIndex = 0;
 	void BeginScene();
 	void EndScene();
-	void WaitForPreviousFrame();
 	void WaitFenceValue(UINT64 value);
 	void SetRenderTarget();
 public:

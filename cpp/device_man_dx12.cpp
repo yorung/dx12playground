@@ -6,28 +6,31 @@
 
 DeviceManDX12 deviceMan;
 
+DeviceManDX12::FrameResources::~FrameResources()
+{
+	assert(!renderTarget);
+	assert(!commandAllocator);
+	assert(!constantBuffer);
+	assert(!srvHeap);
+	assert(!mappedConstantBuffer);
+}
+
 DeviceManDX12::~DeviceManDX12()
 {
 	assert(!factory);
 	assert(!device);
 	assert(!commandQueue);
-	assert(!commandAllocator);
 	assert(!commandList);
 	assert(!fence);
 	assert(!swapChain);
-	for (int i = 0; i < numFrameBuffers; i++) {
-		assert(!renderTargets[i]);
-	}
 	assert(!rtvHeap);
 	assert(!depthStencil);
 	assert(!dsvHeap);
-	assert(!srvHeap);
-	assert(!constantBuffer);
 }
 
 void DeviceManDX12::Destroy()
 {
-	WaitForPreviousFrame();
+	Flush();
 	commandList.Reset();
 	commandQueue.Reset();
 	swapChain.Reset();
@@ -40,6 +43,7 @@ void DeviceManDX12::Destroy()
 			res.constantBuffer->Unmap(0, nullptr);
 		}
 		res.constantBuffer.Reset();
+		res.fenceValueToGuard = 0;
 	}
 	rtvHeap.Reset();
 	depthStencil.Reset();
@@ -52,15 +56,6 @@ void DeviceManDX12::Destroy()
 	if (cnt) {
 		MessageBoxA(GetActiveWindow(), SPrintf("%d leaks detected.", cnt), "DX12 leaks", MB_OK);
 	}
-}
-
-void DeviceManDX12::WaitForPreviousFrame()
-{
-	if (!commandQueue) {
-		return;
-	}
-	commandQueue->Signal(fence.Get(), fenceValue);
-	WaitFenceValue(fenceValue++);
 }
 
 void DeviceManDX12::WaitFenceValue(UINT64 value)
@@ -88,11 +83,12 @@ void DeviceManDX12::SetRenderTarget()
 
 void DeviceManDX12::BeginScene()
 {
-	WaitForPreviousFrame();
 	numAssignedSrvs = 0;
 	numAssignedConstantBufferBlocks = 0;
 	frameIndex = deviceMan.GetSwapChain()->GetCurrentBackBufferIndex();
 	FrameResources& res = frameResources[frameIndex];
+	WaitFenceValue(res.fenceValueToGuard);
+
 	res.commandAllocator->Reset();
 	commandList->Reset(res.commandAllocator.Get(), nullptr);
 	D3D12_RESOURCE_BARRIER barrier = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ deviceMan.GetRenderTarget().Get(), 0, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET } };
@@ -117,6 +113,9 @@ void DeviceManDX12::EndScene()
 	commandList->Close();
 	ID3D12CommandList* lists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	FrameResources& res = frameResources[frameIndex];
+	commandQueue->Signal(fence.Get(), res.fenceValueToGuard = fenceValue++);
 }
 
 void DeviceManDX12::Flush()
@@ -127,7 +126,8 @@ void DeviceManDX12::Flush()
 	commandList->Close();
 	ID3D12CommandList* lists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(lists), lists);
-	WaitForPreviousFrame();
+	commandQueue->Signal(fence.Get(), fenceValue);
+	WaitFenceValue(fenceValue++);
 
 	FrameResources& res = frameResources[frameIndex];
 	res.commandAllocator->Reset();
