@@ -59,14 +59,17 @@ void DeviceManDX12::WaitForPreviousFrame()
 	if (!commandQueue) {
 		return;
 	}
-	const UINT64 prevFenceValue = fenceValue;
-	commandQueue->Signal(fence.Get(), prevFenceValue);
-	fenceValue++;
+	commandQueue->Signal(fence.Get(), fenceValue);
+	WaitFenceValue(fenceValue++);
+}
 
-	if (fence->GetCompletedValue() < prevFenceValue) {
+void DeviceManDX12::WaitFenceValue(UINT64 value)
+{
+	assert(fence);
+	if (fence->GetCompletedValue() < value) {
 		HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		assert(fenceEvent);
-		fence->SetEventOnCompletion(prevFenceValue, fenceEvent);
+		fence->SetEventOnCompletion(value, fenceEvent);
 		WaitForSingleObject(fenceEvent, INFINITE);
 		CloseHandle(fenceEvent);
 	}
