@@ -27,11 +27,7 @@ DeviceManDX12::~DeviceManDX12()
 
 void DeviceManDX12::Destroy()
 {
-	if (fenceEvent != INVALID_HANDLE_VALUE) {
-		WaitForPreviousFrame();
-		CloseHandle(fenceEvent);
-		fenceEvent = INVALID_HANDLE_VALUE;
-	}
+	WaitForPreviousFrame();
 	commandList.Reset();
 	commandAllocator.Reset();
 	commandQueue.Reset();
@@ -60,14 +56,19 @@ void DeviceManDX12::Destroy()
 
 void DeviceManDX12::WaitForPreviousFrame()
 {
+	if (!commandQueue) {
+		return;
+	}
 	const UINT64 prevFenceValue = fenceValue;
 	commandQueue->Signal(fence.Get(), prevFenceValue);
 	fenceValue++;
 
-	if (fence->GetCompletedValue() < prevFenceValue)
-	{
+	if (fence->GetCompletedValue() < prevFenceValue) {
+		HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		assert(fenceEvent);
 		fence->SetEventOnCompletion(prevFenceValue, fenceEvent);
 		WaitForSingleObject(fenceEvent, INFINITE);
+		CloseHandle(fenceEvent);
 	}
 }
 
@@ -285,8 +286,5 @@ void DeviceManDX12::Create(HWND hWnd)
 		Destroy();
 		return;
 	}
-	fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	assert (fenceEvent);
-
 	BeginScene();
 }

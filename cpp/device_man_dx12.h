@@ -16,7 +16,6 @@ class DeviceManDX12
 	ComPtr<ID3D12CommandAllocator> commandAllocator;
 	ComPtr<ID3D12GraphicsCommandList> commandList;
 	ComPtr<ID3D12Fence> fence;
-	HANDLE fenceEvent = INVALID_HANDLE_VALUE;
 	UINT64 fenceValue = 1;
 	UINT frameIndex = 0;
 	void BeginScene();
