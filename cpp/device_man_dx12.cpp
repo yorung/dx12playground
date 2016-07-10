@@ -195,7 +195,7 @@ void DeviceManDX12::Present()
 		return;
 	}
 	EndScene();
-	swapChain->Present(1, 0);
+	swapChain->Present(0, 0);
 	BeginScene();
 }
 
