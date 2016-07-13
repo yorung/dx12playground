@@ -79,14 +79,40 @@ ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf)
 	return o;
 }
 
-VBOID afCreateVertexBuffer(int size, const void* buf)
+VBOID afCreateDynamicVertexBuffer(int size, const void* buf)
 {
 	return afCreateBuffer(size, buf);
 }
 
+VBOID afCreateVertexBuffer(int size, const void* buf)
+{
+	D3D12_HEAP_PROPERTIES prop = { D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN,{ 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
+	VBOID o;
+	deviceMan.GetDevice()->CreateCommittedResource(&prop, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr, IID_PPV_ARGS(&o));
+	if (o) {
+		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, buf);
+		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
+		intermediateBuffer.Get()->AddRef();	// FIXME: leak
+	}
+	return o;
+}
+
 IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi)
 {
-	return afCreateBuffer(numIndi * sizeof(AFIndex), indi);
+	assert(indi);
+	int size = numIndi * sizeof(AFIndex);
+
+	D3D12_HEAP_PROPERTIES prop = { D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN,{ 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
+	IBOID o;
+	deviceMan.GetDevice()->CreateCommittedResource(&prop, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_INDEX_BUFFER, nullptr, IID_PPV_ARGS(&o));
+	if (o) {
+		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, indi);
+		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
+		intermediateBuffer.Get()->AddRef();	// FIXME: leak
+	}
+	return o;
 }
 
 UBOID afCreateUBO(int size)
