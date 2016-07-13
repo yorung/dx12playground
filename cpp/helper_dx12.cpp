@@ -93,7 +93,7 @@ VBOID afCreateVertexBuffer(int size, const void* buf)
 	if (o) {
 		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, buf);
 		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
-		intermediateBuffer.Get()->AddRef();	// FIXME: leak
+		deviceMan.AddIntermediateCommandlistDependentResource(intermediateBuffer);
 	}
 	return o;
 }
@@ -110,7 +110,7 @@ IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi)
 	if (o) {
 		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, indi);
 		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
-		intermediateBuffer.Get()->AddRef();	// FIXME: leak
+		deviceMan.AddIntermediateCommandlistDependentResource(intermediateBuffer);
 	}
 	return o;
 }
@@ -136,7 +136,8 @@ void afWriteTexture(SRVID id, const TexDesc& desc, const void* buf)
 	list->CopyTextureRegion(&nativeBufLocation, 0, 0, 0, &uploadBufLocation, nullptr);
 	D3D12_RESOURCE_BARRIER transition2 = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE, { id.Get(), 0, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE } };
 	list->ResourceBarrier(1, &transition2);
-	deviceMan.Flush();
+
+	deviceMan.AddIntermediateCommandlistDependentResource(uploadBuf);
 }
 
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)

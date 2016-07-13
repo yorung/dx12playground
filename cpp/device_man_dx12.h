@@ -8,6 +8,7 @@ class DeviceManDX12
 	class FrameResources {
 	public:
 		~FrameResources();
+		std::vector<ComPtr<ID3D12Resource>> intermediateCommandlistDependentResources;
 		ComPtr<ID3D12Resource> renderTarget;
 		ComPtr<ID3D12CommandAllocator> commandAllocator;
 		ComPtr<ID3D12Resource> constantBuffer;
@@ -44,6 +45,7 @@ public:
 	ComPtr<IDXGISwapChain3> GetSwapChain() { return swapChain; }
 	ComPtr<ID3D12Resource> GetRenderTarget() { return frameResources[frameIndex].renderTarget; }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList.Get(); }
+	void AddIntermediateCommandlistDependentResource(ComPtr<ID3D12Resource> intermediateResource);
 };
 
 extern DeviceManDX12 deviceMan;
