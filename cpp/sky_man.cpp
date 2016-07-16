@@ -16,9 +16,7 @@ void SkyMan::Create(const char *texFileName, const char* shader)
 		CDescriptorCBV(0),
 		CDescriptorSRV(0),
 	};
-	static D3D12_STATIC_SAMPLER_DESC samplers[] = {
-		CSampler(0, SF_LINEAR, SW_REPEAT),
-	};
+	static SamplerType samplers[] = { AFST_LINEAR_WRAP };
 	rootSignature = afCreateRootSignature(dimof(descriptors), descriptors, dimof(samplers), samplers);
 	pipelineState = afCreatePSO(shader, nullptr, 0, BM_NONE, DSM_DEPTH_CLOSEREQUAL_READONLY, CM_DISABLE, rootSignature);
 

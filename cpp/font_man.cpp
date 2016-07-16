@@ -45,9 +45,7 @@ bool FontMan::Init()
 	static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 		CDescriptorSRV(0),
 	};
-	static D3D12_STATIC_SAMPLER_DESC samplers[] = {
-		CSampler(0, SF_POINT, SW_REPEAT),
-	};
+	static SamplerType samplers[] = { AFST_POINT_WRAP };
 	rootSignature = afCreateRootSignature(_countof(descriptors), descriptors, _countof(samplers), samplers);
 	pipelineState = afCreatePSO("font", elements, _countof(elements), BM_ALPHA, DSM_DISABLE, CM_DISABLE, rootSignature);
 

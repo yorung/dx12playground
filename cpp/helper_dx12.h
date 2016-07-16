@@ -56,34 +56,14 @@ enum DepthStencilMode {
 	DSM_DEPTH_CLOSEREQUAL_READONLY,
 };
 
-#define SamplerWrap D3D12_TEXTURE_ADDRESS_MODE
-#define SW_REPEAT D3D12_TEXTURE_ADDRESS_MODE_WRAP
-#define SW_CLAMP D3D12_TEXTURE_ADDRESS_MODE_CLAMP
-
-#define SamplerFilter D3D12_FILTER
-#define SF_POINT D3D12_FILTER_MIN_MAG_MIP_POINT
-#define SF_LINEAR D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT
-#define SF_MIPMAP D3D12_FILTER_MIN_MAG_MIP_LINEAR
-
-class CSampler : public D3D12_STATIC_SAMPLER_DESC
-{
-public:
-	CSampler(int shaderRegister, SamplerFilter samplerFilter, SamplerWrap wrap)
-	{
-		Filter = samplerFilter;
-		AddressU = wrap;
-		AddressV = wrap;
-		AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		MipLODBias = 0;
-		MaxAnisotropy = 1;
-		ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-		BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-		MinLOD = 0;
-		MaxLOD = D3D12_FLOAT32_MAX;
-		ShaderRegister = shaderRegister;
-		RegisterSpace = 0;
-		ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	}
+enum SamplerType {
+	AFST_POINT_WRAP,
+	AFST_POINT_CLAMP,
+	AFST_LINEAR_WRAP,
+	AFST_LINEAR_CLAMP,
+	AFST_MIPMAP_WRAP,
+	AFST_MIPMAP_CLAMP,
+	AFST_MAX
 };
 
 class CDescriptorCBV : public D3D12_DESCRIPTOR_RANGE {
@@ -109,7 +89,7 @@ public:
 };
 
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature);
-ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, D3D12_STATIC_SAMPLER_DESC samplers[]);
+ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, const SamplerType samplers[]);
 
 #define PrimitiveTopology D3D_PRIMITIVE_TOPOLOGY
 #define PT_TRIANGLESTRIP D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP

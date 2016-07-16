@@ -234,11 +234,39 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	return pso;
 }
 
-ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, D3D12_STATIC_SAMPLER_DESC samplers[])
+ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, const SamplerType samplers[])
 {
 	ComPtr<ID3D12RootSignature> rs;
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
+
+	D3D12_STATIC_SAMPLER_DESC staticSamplers[16] = {};
+	assert(numSamplers < (int)dimof(staticSamplers));
+	for (int i = 0; i < numSamplers; i++) {
+		D3D12_STATIC_SAMPLER_DESC& desc = staticSamplers[i];
+		switch (samplers[i] >> 1) {
+		case 2:	// mipmap
+			desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+			break;
+		case 1:	// linear
+			desc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			break;
+		case 0:	// point
+			desc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+			break;
+		}
+		desc.AddressU = desc.AddressV = (samplers[i] & 0x01) ? D3D12_TEXTURE_ADDRESS_MODE_CLAMP : D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		desc.MipLODBias = 0;
+		desc.MaxAnisotropy = 1;
+		desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		desc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		desc.MinLOD = 0;
+		desc.MaxLOD = D3D12_FLOAT32_MAX;
+		desc.ShaderRegister = i;
+		desc.RegisterSpace = 0;
+		desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	}
 
 	D3D12_ROOT_PARAMETER rootParameter = {};
 	rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -246,7 +274,7 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESC
 	rootParameter.DescriptorTable.NumDescriptorRanges = numDescriptors;
 	rootParameter.DescriptorTable.pDescriptorRanges = descriptors;
 
-	D3D12_ROOT_SIGNATURE_DESC rsDesc = { (UINT)(numDescriptors ? 1 : 0), &rootParameter, (UINT)numSamplers, samplers, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
+	D3D12_ROOT_SIGNATURE_DESC rsDesc = { (UINT)(numDescriptors ? 1 : 0), &rootParameter, (UINT)numSamplers, staticSamplers, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
 	HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
 	assert(hr == S_OK);
 	hr = deviceMan.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rs));
