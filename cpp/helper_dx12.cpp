@@ -308,3 +308,15 @@ ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[])
 
 	return heap;
 }
+
+void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value)
+{
+	if (fence->GetCompletedValue() >= value) {
+		return;
+	}
+	HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	assert(fenceEvent);
+	fence->SetEventOnCompletion(value, fenceEvent);
+	WaitForSingleObject(fenceEvent, INFINITE);
+	CloseHandle(fenceEvent);
+}

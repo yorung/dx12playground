@@ -58,18 +58,6 @@ void DeviceManDX12::Destroy()
 	}
 }
 
-void DeviceManDX12::WaitFenceValue(UINT64 value)
-{
-	assert(fence);
-	if (fence->GetCompletedValue() < value) {
-		HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		assert(fenceEvent);
-		fence->SetEventOnCompletion(value, fenceEvent);
-		WaitForSingleObject(fenceEvent, INFINITE);
-		CloseHandle(fenceEvent);
-	}
-}
-
 void DeviceManDX12::SetRenderTarget()
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
@@ -87,7 +75,7 @@ void DeviceManDX12::BeginScene()
 	numAssignedConstantBufferBlocks = 0;
 	frameIndex = deviceMan.GetSwapChain()->GetCurrentBackBufferIndex();
 	FrameResources& res = frameResources[frameIndex];
-	WaitFenceValue(res.fenceValueToGuard);
+	afWaitFenceValue(fence, res.fenceValueToGuard);
 
 	res.intermediateCommandlistDependentResources.clear();
 
@@ -129,7 +117,7 @@ void DeviceManDX12::Flush()
 	ID3D12CommandList* lists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(lists), lists);
 	commandQueue->Signal(fence.Get(), fenceValue);
-	WaitFenceValue(fenceValue++);
+	afWaitFenceValue(fence, fenceValue++);
 
 	for (FrameResources& res : frameResources)
 	{

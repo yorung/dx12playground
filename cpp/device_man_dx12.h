@@ -28,7 +28,6 @@ class DeviceManDX12
 	UINT frameIndex = 0;
 	void BeginScene();
 	void EndScene();
-	void WaitFenceValue(UINT64 value);
 	void SetRenderTarget();
 public:
 	~DeviceManDX12();

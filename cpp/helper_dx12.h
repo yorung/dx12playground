@@ -118,3 +118,4 @@ void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
 #define afCreateDynamicTexture afCreateTexture2D
 
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);
+void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value);
