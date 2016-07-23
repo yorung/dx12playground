@@ -73,7 +73,7 @@ void DeviceManDX12::BeginScene()
 {
 	numAssignedSrvs = 0;
 	numAssignedConstantBufferBlocks = 0;
-	frameIndex = deviceMan.GetSwapChain()->GetCurrentBackBufferIndex();
+	frameIndex = swapChain->GetCurrentBackBufferIndex();
 	FrameResources& res = frameResources[frameIndex];
 	afWaitFenceValue(fence, res.fenceValueToGuard);
 
@@ -85,7 +85,7 @@ void DeviceManDX12::BeginScene()
 	commandList->ResourceBarrier(1, &barrier);
 
 	DXGI_SWAP_CHAIN_DESC desc;
-	deviceMan.GetSwapChain()->GetDesc(&desc);
+	swapChain->GetDesc(&desc);
 
 	D3D12_VIEWPORT vp = {0.f, 0.f, (float)desc.BufferDesc.Width, (float)desc.BufferDesc.Height, 0.f, 1.f};
 	D3D12_RECT rc = {0, 0, (LONG)desc.BufferDesc.Width, (LONG)desc.BufferDesc.Height};
@@ -262,7 +262,7 @@ void DeviceManDX12::Create(HWND hWnd)
 	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	for (int i = 0; i < numFrameBuffers; i++) {
 		FrameResources& res = frameResources[i];
-		if (S_OK != deviceMan.GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&res.renderTarget))) {
+		if (S_OK != swapChain->GetBuffer(i, IID_PPV_ARGS(&res.renderTarget))) {
 			Destroy();
 			return;
 		}
