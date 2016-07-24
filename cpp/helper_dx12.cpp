@@ -120,24 +120,37 @@ UBOID afCreateUBO(int size)
 	return afCreateBuffer((size + 0xff) & ~0xff);
 }
 
+void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubresourceData datas[])
+{
+	const UINT subResources = mipCount * desc.arraySize;
+	const D3D12_RESOURCE_DESC destDesc = id->GetDesc();
+	for (UINT i = 0; i < subResources; i++) {
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+		UINT numRow;
+		UINT64 rowSizeInBytes, uploadSize;
+		deviceMan.GetDevice()->GetCopyableFootprints(&destDesc, i, 1, 0, &footprint, &numRow, &rowSizeInBytes, &uploadSize);
+		ComPtr<ID3D12Resource> uploadBuf = afCreateBuffer((int)uploadSize, datas[i].pData);
+		D3D12_TEXTURE_COPY_LOCATION uploadBufLocation = { uploadBuf.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, footprint };
+		D3D12_TEXTURE_COPY_LOCATION nativeBufLocation = { id.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, i };
+		ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
+
+		D3D12_RESOURCE_BARRIER transition1 = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ id.Get(), i, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST } };
+		list->ResourceBarrier(1, &transition1);
+		list->CopyTextureRegion(&nativeBufLocation, 0, 0, 0, &uploadBufLocation, nullptr);
+		D3D12_RESOURCE_BARRIER transition2 = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ id.Get(), i, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE } };
+		list->ResourceBarrier(1, &transition2);
+
+		deviceMan.AddIntermediateCommandlistDependentResource(uploadBuf);
+	}
+}
+
 void afWriteTexture(SRVID id, const TexDesc& desc, const void* buf)
 {
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-	UINT numRow;
-	UINT64 uploadSize, rowSizeInBytes;
-	D3D12_RESOURCE_DESC destDesc = id->GetDesc();
-	deviceMan.GetDevice()->GetCopyableFootprints(&destDesc, 0, 1, 0, &footprint, &numRow, &rowSizeInBytes, &uploadSize);
-	ComPtr<ID3D12Resource> uploadBuf = afCreateBuffer((int)uploadSize, buf);
-	D3D12_TEXTURE_COPY_LOCATION uploadBufLocation = { uploadBuf.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, footprint }, nativeBufLocation = { id.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
-	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
-
-	D3D12_RESOURCE_BARRIER transition1 = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE, { id.Get(), 0, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST } };
-	list->ResourceBarrier(1, &transition1);
-	list->CopyTextureRegion(&nativeBufLocation, 0, 0, 0, &uploadBufLocation, nullptr);
-	D3D12_RESOURCE_BARRIER transition2 = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE, { id.Get(), 0, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE } };
-	list->ResourceBarrier(1, &transition2);
-
-	deviceMan.AddIntermediateCommandlistDependentResource(uploadBuf);
+	assert(desc.arraySize == 1);
+	assert(!desc.isCubeMap);
+	AFTexSubresourceData data = {};
+	data.pData = buf;
+	afWriteTexture(id, desc, 1, &data);
 }
 
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image)
@@ -173,7 +186,7 @@ SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCo
 {
 	bool isDepthStencil = format == AFDT_DEPTH || format == AFDT_DEPTH_STENCIL;
 	D3D12_RESOURCE_DESC textureDesc = {};
-	textureDesc.MipLevels = 1;
+	textureDesc.MipLevels = mipCount;
 	textureDesc.Format = format;
 	textureDesc.Width = desc.size.x;
 	textureDesc.Height = desc.size.y;
@@ -190,7 +203,7 @@ SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCo
 		clearValue.DepthStencil.Depth = 1.0f;
 	}
 	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&prop, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, isDepthStencil ? &clearValue : nullptr, IID_PPV_ARGS(&id));
-	afWriteTexture(id, desc, datas[0].pData);
+	afWriteTexture(id, desc, mipCount, datas);
 	return id;
 }
 
