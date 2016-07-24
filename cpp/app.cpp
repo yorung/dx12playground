@@ -25,7 +25,7 @@ void App::Init()
 	GoMyDir();
 
 	triangle.Create();
-	skyMan.Create("hakodate.jpg", "sky_photosphere");
+	skyMan.Create("yangjae.dds", "sky_photosphere");
 	fontMan.Init();
 }
 
