@@ -124,12 +124,34 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 {
 	const UINT subResources = mipCount * desc.arraySize;
 	const D3D12_RESOURCE_DESC destDesc = id->GetDesc();
+/*	for debug
+	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints;
+	footprints.resize(subResources);
+	deviceMan.GetDevice()->GetCopyableFootprints(&destDesc, 0, subResources, 0, &footprints[0], nullptr, nullptr, nullptr);
+*/
+
+
 	for (UINT i = 0; i < subResources; i++) {
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
 		UINT numRow;
 		UINT64 rowSizeInBytes, uploadSize;
 		deviceMan.GetDevice()->GetCopyableFootprints(&destDesc, i, 1, 0, &footprint, &numRow, &rowSizeInBytes, &uploadSize);
-		ComPtr<ID3D12Resource> uploadBuf = afCreateBuffer((int)uploadSize, datas[i].pData);
+		ComPtr<ID3D12Resource> uploadBuf;
+		if (datas[i].RowPitch == footprint.Footprint.RowPitch) {
+			uploadBuf = afCreateBuffer((int)uploadSize, datas[i].pData);
+		} else {
+			assert(datas[i].RowPitch == rowSizeInBytes);
+			assert(datas[i].RowPitch < footprint.Footprint.RowPitch);
+			uploadBuf = afCreateBuffer((int)uploadSize);
+			D3D12_RANGE readRange = {};
+			BYTE* ptr;
+			HRESULT hr = uploadBuf->Map(0, &readRange, (void**)&ptr);
+			assert(ptr);
+			for (UINT row = 0; row < numRow; row++) {
+				memcpy(ptr + footprint.Footprint.RowPitch * row, (BYTE*)datas[i].pData + datas[i].RowPitch * row, datas[i].RowPitch);
+			}
+			uploadBuf->Unmap(0, nullptr);
+		}
 		D3D12_TEXTURE_COPY_LOCATION uploadBufLocation = { uploadBuf.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, footprint };
 		D3D12_TEXTURE_COPY_LOCATION nativeBufLocation = { id.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, i };
 		ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
@@ -148,8 +170,10 @@ void afWriteTexture(SRVID id, const TexDesc& desc, const void* buf)
 {
 	assert(desc.arraySize == 1);
 	assert(!desc.isCubeMap);
-	AFTexSubresourceData data = {};
-	data.pData = buf;
+
+	const D3D12_RESOURCE_DESC destDesc = id->GetDesc();
+	assert(destDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM);
+	AFTexSubresourceData data = { buf, desc.size.x * 4, 0 };
 	afWriteTexture(id, desc, 1, &data);
 }
 
