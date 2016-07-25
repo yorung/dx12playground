@@ -139,7 +139,7 @@ static SRVID LoadDDSTexture(const char* name, TexDesc& texDesc)
 			int w = std::max(1, hdr->w >> m);
 			int h = std::max(1, hdr->h >> m);
 			int size = pitchCalcurator(w, h);
-			r.push_back({ (char*)img + offset, (LONG_PTR)pitchCalcurator(w, 1), (LONG_PTR)size });
+			r.push_back({ (char*)img + offset, (uint32_t)pitchCalcurator(w, 1), (uint32_t)size });
 			offset += size;
 		}
 	}

@@ -99,7 +99,13 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESC
 void afDrawIndexed(PrimitiveTopology pt, int numIndices, int start = 0, int instanceCount = 1);
 void afDraw(PrimitiveTopology pt, int numVertices, int start = 0, int instanceCount = 1);
 
-typedef D3D12_SUBRESOURCE_DATA AFTexSubresourceData;
+struct AFTexSubresourceData
+{
+	const void* ptr;
+	uint32_t pitch;
+	uint32_t pitchSlice;
+};
+
 typedef DXGI_FORMAT AFDTFormat;
 #define AFDT_INVALID DXGI_FORMAT_UNKNOWN
 #define AFDT_R8G8B8A8_UNORM DXGI_FORMAT_R8G8B8A8_UNORM
