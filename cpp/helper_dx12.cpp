@@ -124,12 +124,10 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 {
 	const UINT subResources = mipCount * desc.arraySize;
 	const D3D12_RESOURCE_DESC destDesc = id->GetDesc();
-/*	for debug
+//	for debug
 	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints;
 	footprints.resize(subResources);
 	deviceMan.GetDevice()->GetCopyableFootprints(&destDesc, 0, subResources, 0, &footprints[0], nullptr, nullptr, nullptr);
-*/
-
 
 	for (UINT i = 0; i < subResources; i++) {
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
@@ -137,11 +135,11 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 		UINT64 rowSizeInBytes, uploadSize;
 		deviceMan.GetDevice()->GetCopyableFootprints(&destDesc, i, 1, 0, &footprint, &numRow, &rowSizeInBytes, &uploadSize);
 		ComPtr<ID3D12Resource> uploadBuf;
-		if (datas[i].pitch == footprint.Footprint.RowPitch) {
-			uploadBuf = afCreateBuffer((int)uploadSize, datas[i].ptr);
-		} else {
+	//	if (datas[i].pitch == footprint.Footprint.RowPitch) {
+	//		uploadBuf = afCreateBuffer((int)uploadSize, datas[i].ptr);
+	//	} else {
 			assert(datas[i].pitch == rowSizeInBytes);
-			assert(datas[i].pitch < footprint.Footprint.RowPitch);
+			assert(datas[i].pitch <= footprint.Footprint.RowPitch);
 			uploadBuf = afCreateBuffer((int)uploadSize);
 			D3D12_RANGE readRange = {};
 			BYTE* ptr;
@@ -151,7 +149,7 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 				memcpy(ptr + footprint.Footprint.RowPitch * row, (BYTE*)datas[i].ptr + datas[i].pitch * row, datas[i].pitch);
 			}
 			uploadBuf->Unmap(0, nullptr);
-		}
+	//	}
 		D3D12_TEXTURE_COPY_LOCATION uploadBufLocation = { uploadBuf.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, footprint };
 		D3D12_TEXTURE_COPY_LOCATION nativeBufLocation = { id.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, i };
 		ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
