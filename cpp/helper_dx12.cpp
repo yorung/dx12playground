@@ -236,7 +236,7 @@ SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCo
 	textureDesc.Width = desc.size.x;
 	textureDesc.Height = desc.size.y;
 	textureDesc.Flags = isDepthStencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_NONE;
-	textureDesc.DepthOrArraySize = 1;
+	textureDesc.DepthOrArraySize = desc.arraySize;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;

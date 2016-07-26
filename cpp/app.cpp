@@ -33,7 +33,9 @@ void App::Init()
 	GoMyDir();
 
 	triangle.Create();
+//	skyMan.Create("yangjae_row.dds", "sky_photosphere");
 	skyMan.Create("yangjae.dds", "sky_photosphere");
+//	skyMan.Create("C:\\Program Files (x86)\\Microsoft DirectX SDK (August 2009)\\Samples\\Media\\Lobby\\LobbyCube.dds", "sky_cubemap");
 	fontMan.Init();
 
 	IVec2 scrSize = systemMisc.GetScreenSize();

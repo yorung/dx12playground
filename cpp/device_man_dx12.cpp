@@ -145,7 +145,19 @@ void DeviceManDX12::AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> re
 	FrameResources& res = frameResources[frameIndex];
 	D3D12_CPU_DESCRIPTOR_HANDLE ptr = res.srvHeap->GetCPUDescriptorHandleForHeapStart();
 	ptr.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
-	device->CreateShaderResourceView(resToSrv.Get(), nullptr, ptr);
+	D3D12_RESOURCE_DESC resDesc = resToSrv->GetDesc();
+	if (resDesc.DepthOrArraySize == 6) {
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = resDesc.Format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.TextureCube.MipLevels = resDesc.MipLevels;
+		srvDesc.TextureCube.MostDetailedMip = 0;
+		srvDesc.TextureCube.ResourceMinLODClamp = 0;
+		device->CreateShaderResourceView(resToSrv.Get(), &srvDesc, ptr);
+	} else {
+		device->CreateShaderResourceView(resToSrv.Get(), nullptr, ptr);
+	}
 }
 
 int DeviceManDX12::AssignConstantBuffer(const void* buf, int size)
