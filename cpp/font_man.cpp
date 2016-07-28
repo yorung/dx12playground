@@ -124,9 +124,7 @@ void FontMan::FlushToTexture()
 	}
 //	aflog("FontMan::FlushToTexture flushed\n");
 	dirty = false;
-	TexDesc desc;
-	desc.size = IVec2(TEX_W, TEX_H);
-	afWriteTexture(texture, desc, texSrc.ReferPixels());
+	afWriteTexture(texture, texSrc.ReferPixels());
 }
 
 void FontMan::Render()

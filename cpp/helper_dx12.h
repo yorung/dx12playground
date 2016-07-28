@@ -114,7 +114,7 @@ typedef DXGI_FORMAT AFDTFormat;
 
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image = nullptr);
 SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
-void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
+void afWriteTexture(SRVID srv, const void* buf);
 #define afCreateDynamicTexture afCreateTexture2D
 
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);
