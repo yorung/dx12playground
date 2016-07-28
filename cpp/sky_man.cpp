@@ -2,6 +2,8 @@
 
 SkyMan skyMan;
 
+static const SamplerType samplers[] = { AFST_LINEAR_WRAP };
+
 SkyMan::~SkyMan()
 {
 	assert(!texId);
@@ -16,7 +18,6 @@ void SkyMan::Create(const char *texFileName, const char* shader)
 		CDescriptorCBV(0),
 		CDescriptorSRV(0),
 	};
-	static SamplerType samplers[] = { AFST_LINEAR_WRAP };
 	rootSignature = afCreateRootSignature(dimof(descriptors), descriptors, dimof(samplers), samplers);
 	pipelineState = afCreatePSO(shader, nullptr, 0, BM_NONE, DSM_DEPTH_CLOSEREQUAL_READONLY, CM_DISABLE, rootSignature);
 

@@ -39,13 +39,16 @@ static InputElement elements[] = {
 	CInputElement("TEXCOORD", SF_R32G32_FLOAT, 8),
 };
 
+const static SamplerType samplers[] = {
+	AFST_POINT_CLAMP,
+};
+
 bool FontMan::Init()
 {
 	Destroy();
 	static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 		CDescriptorSRV(0),
 	};
-	static SamplerType samplers[] = { AFST_POINT_WRAP };
 	rootSignature = afCreateRootSignature(_countof(descriptors), descriptors, _countof(samplers), samplers);
 	pipelineState = afCreatePSO("font", elements, _countof(elements), BM_ALPHA, DSM_DISABLE, CM_DISABLE, rootSignature);
 
