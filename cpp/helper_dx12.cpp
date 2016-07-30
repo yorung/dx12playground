@@ -380,3 +380,25 @@ IVec2 afGetTextureSize(SRVID tex)
 	D3D12_RESOURCE_DESC desc = tex->GetDesc();
 	return IVec2((int)desc.Width, (int)desc.Height);
 }
+
+void afBindCbv0(const void* buf, int size)
+{
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
+	deviceMan.AssignConstantBuffer(descriptorHeapIndex, buf, size);
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+}
+
+void afBindSrv0(SRVID srv)
+{
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
+	deviceMan.AssignSRV(descriptorHeapIndex, srv);
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+}
+
+void afBindCbv0Srv0(const void* buf, int size, SRVID srv)
+{
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(2);
+	deviceMan.AssignConstantBuffer(descriptorHeapIndex, buf, size);
+	deviceMan.AssignSRV(descriptorHeapIndex + 1, srv);
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+}

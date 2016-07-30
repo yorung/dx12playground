@@ -40,12 +40,7 @@ void SkyMan::Draw()
 	matrixMan.Get(MatrixMan::PROJ, matP);
 	matV._41 = matV._42 = matV._43 = 0;
 	Mat invVP = inv(matV * matP);
-
-	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(2);
-	deviceMan.AssignConstantBuffer(descriptorHeapIndex, &invVP, sizeof(invVP));
-	deviceMan.AssignSRV(descriptorHeapIndex + 1, texId);
-	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
-
+	afBindCbv0Srv0(&invVP, sizeof(invVP), texId);
 	afDraw(PT_TRIANGLESTRIP, 4);
 }
 

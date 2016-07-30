@@ -154,10 +154,7 @@ void FontMan::Render()
 		}
 	}
 	afSetPipeline(pipelineState, rootSignature);
-
-	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
-	deviceMan.AssignSRV(descriptorHeapIndex, texture);
-	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+	afBindSrv0(texture);
 
 	VBOID vbo = afCreateDynamicVertexBuffer(4 * numSprites * sizeof(FontVertex), verts);
 	afSetVertexBuffer(vbo, sizeof(FontVertex));

@@ -127,3 +127,7 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);
 void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value);
 IVec2 afGetTextureSize(SRVID tex);
+
+void afBindCbv0(const void* buf, int size);
+void afBindSrv0(SRVID srv);
+void afBindCbv0Srv0(const void* buf, int size, SRVID srv);

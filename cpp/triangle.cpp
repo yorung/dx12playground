@@ -37,10 +37,8 @@ void Triangle::Draw()
 	Mat matProj = ortho(-2, 2, -2, 2, 0.001f, 10.0f);
 	Mat matView = lookatLH(Vec3(0, 0, -1), Vec3(0, 0, 0), Vec3(0, 1, 0));
 	for (int i = 0; i < dimof(matWorld); i++) {
-		int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
 		Mat m = matWorld[i] * matView * matProj;
-		deviceMan.AssignConstantBuffer(descriptorHeapIndex, &m, sizeof(m));
-		deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+		afBindCbv0(&m, sizeof(m));
 		afDrawIndexed(PT_TRIANGLELIST, 3);
 	}
 }
