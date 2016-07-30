@@ -374,3 +374,9 @@ void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value)
 	WaitForSingleObject(fenceEvent, INFINITE);
 	CloseHandle(fenceEvent);
 }
+
+IVec2 afGetTextureSize(SRVID tex)
+{
+	D3D12_RESOURCE_DESC desc = tex->GetDesc();
+	return IVec2((int)desc.Width, (int)desc.Height);
+}
