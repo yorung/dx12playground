@@ -288,7 +288,7 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	return pso;
 }
 
-ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESCRIPTOR_RANGE descriptors[], int numSamplers, const SamplerType samplers[])
+ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLayout, int numSamplers, const SamplerType samplers[])
 {
 	ComPtr<ID3D12RootSignature> rs;
 	ComPtr<ID3DBlob> signature;
@@ -325,10 +325,38 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(int numDescriptors, D3D12_DESC
 	D3D12_ROOT_PARAMETER rootParameter = {};
 	rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParameter.DescriptorTable.NumDescriptorRanges = numDescriptors;
-	rootParameter.DescriptorTable.pDescriptorRanges = descriptors;
+	switch (descriptorLayout) {
+	case AFDL_CBV0:
+		{
+			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
+				CDescriptorCBV(0),
+			};
+			rootParameter.DescriptorTable.NumDescriptorRanges = _countof(descriptors);
+			rootParameter.DescriptorTable.pDescriptorRanges = descriptors;
+			break;
+		}
+	case AFDL_SRV0:
+		{
+			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
+				CDescriptorSRV(0),
+			};
+			rootParameter.DescriptorTable.NumDescriptorRanges = _countof(descriptors);
+			rootParameter.DescriptorTable.pDescriptorRanges = descriptors;
+			break;
+		}
+	case AFDL_CBV0_SRV0:
+		{
+			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
+				CDescriptorCBV(0),
+				CDescriptorSRV(0),
+			};
+			rootParameter.DescriptorTable.NumDescriptorRanges = _countof(descriptors);
+			rootParameter.DescriptorTable.pDescriptorRanges = descriptors;
+			break;
+		}
+	}
 
-	D3D12_ROOT_SIGNATURE_DESC rsDesc = { (UINT)(numDescriptors ? 1 : 0), &rootParameter, (UINT)numSamplers, staticSamplers, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
+	D3D12_ROOT_SIGNATURE_DESC rsDesc = { (UINT)(descriptorLayout != AFDL_NONE ? 1 : 0), &rootParameter, (UINT)numSamplers, staticSamplers, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
 	HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
 	assert(hr == S_OK);
 	hr = deviceMan.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rs));

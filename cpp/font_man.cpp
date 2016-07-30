@@ -46,10 +46,7 @@ const static SamplerType samplers[] = {
 bool FontMan::Init()
 {
 	Destroy();
-	static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-		CDescriptorSRV(0),
-	};
-	rootSignature = afCreateRootSignature(_countof(descriptors), descriptors, _countof(samplers), samplers);
+	rootSignature = afCreateRootSignature(AFDL_SRV0, _countof(samplers), samplers);
 	pipelineState = afCreatePSO("font", elements, _countof(elements), BM_ALPHA, DSM_DISABLE, CM_DISABLE, rootSignature);
 
 	if (!texSrc.Create(TEX_W, TEX_H)) {

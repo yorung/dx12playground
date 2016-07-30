@@ -14,13 +14,8 @@ SkyMan::~SkyMan()
 void SkyMan::Create(const char *texFileName, const char* shader)
 {
 	Destroy();
-	static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-		CDescriptorCBV(0),
-		CDescriptorSRV(0),
-	};
-	rootSignature = afCreateRootSignature(dimof(descriptors), descriptors, dimof(samplers), samplers);
+	rootSignature = afCreateRootSignature(AFDL_CBV0_SRV0, dimof(samplers), samplers);
 	pipelineState = afCreatePSO(shader, nullptr, 0, BM_NONE, DSM_DEPTH_CLOSEREQUAL_READONLY, CM_DISABLE, rootSignature);
-
 	texId = afLoadTexture(texFileName, texDesc);
 }
 

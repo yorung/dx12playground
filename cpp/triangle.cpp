@@ -45,12 +45,9 @@ void Triangle::Draw()
 
 void Triangle::Create()
 {
-	D3D12_DESCRIPTOR_RANGE descs[] = {
-		CDescriptorCBV(0),
-	};
 	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
 	ibo = afCreateIndexBuffer(indices, _countof(indices));
-	rootSignature = afCreateRootSignature(1, descs, 0, nullptr);
+	rootSignature = afCreateRootSignature(AFDL_CBV0, 0, nullptr);
 	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature);
 }
 
