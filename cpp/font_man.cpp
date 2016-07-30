@@ -58,9 +58,6 @@ bool FontMan::Init()
 	texture = afCreateDynamicTexture(AFDT_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
 	
 	ibo = afCreateQuadListIndexBuffer(SPRITE_MAX);
-	vbo = afCreateDynamicVertexBuffer(SPRITE_MAX * sizeof(FontVertex) * 4);
-	int stride = sizeof(FontVertex);
-	VBOID vboIds[] = {vbo};
 	return true;
 }
 
@@ -71,7 +68,6 @@ void FontMan::Destroy()
 	rootSignature.Reset();
 	texSrc.Destroy();
 	afSafeDeleteBuffer(ibo);
-	afSafeDeleteBuffer(vbo);
 	ClearCache();
 }
 
@@ -143,7 +139,6 @@ void FontMan::Render()
 	FlushToTexture();
 
 	Vec2 scrSize = systemMisc.GetScreenSize();
-
 	static FontVertex verts[4 * SPRITE_MAX];
 	for (int i = 0; i < numSprites; i++) {
 		CharSprite& cs = charSprites[i];
@@ -158,14 +153,15 @@ void FontMan::Render()
 			verts[i * 4 + j].coord = (cc.srcPos + fontVertAlign[j] * cc.desc.srcWidth) / Vec2(TEX_W, TEX_H);
 		}
 	}
-	afWriteBuffer(vbo, verts, 4 * numSprites * sizeof(FontVertex));
 	afSetPipeline(pipelineState, rootSignature);
 
 	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
 	deviceMan.AssignSRV(descriptorHeapIndex, texture);
 	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
 
+	VBOID vbo = afCreateDynamicVertexBuffer(4 * numSprites * sizeof(FontVertex), verts);
 	afSetVertexBuffer(vbo, sizeof(FontVertex));
+	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
 	afSetIndexBuffer(ibo);
 	afDrawIndexed(PT_TRIANGLELIST, numSprites * 6);
 	numSprites = 0;
@@ -173,7 +169,7 @@ void FontMan::Render()
 
 void FontMan::DrawChar(Vec2& pos, const CharSignature& sig)
 {
-	if (!vbo) {
+	if (!ibo) {
 		return;
 	}
 

@@ -21,7 +21,6 @@ class FontMan
 	ComPtr<ID3D12RootSignature> rootSignature;
 	ComPtr<ID3D12PipelineState> pipelineState;
 	IBOID ibo;
-	VBOID vbo;
 	bool dirty = false;
 	bool Build(const CharSignature& signature);
 	bool Cache(const CharSignature& code);
