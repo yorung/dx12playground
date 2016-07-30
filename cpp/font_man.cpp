@@ -152,10 +152,7 @@ void FontMan::Render()
 	}
 	afSetPipeline(pipelineState, rootSignature);
 	afBindSrv0(texture);
-
-	VBOID vbo = afCreateDynamicVertexBuffer(4 * numSprites * sizeof(FontVertex), verts);
-	afSetVertexBuffer(vbo, sizeof(FontVertex));
-	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
+	afSetVertexBufferFromSystemMemory(verts, 4 * numSprites * sizeof(FontVertex), sizeof(FontVertex));
 	afSetIndexBuffer(ibo);
 	afDrawIndexed(PT_TRIANGLELIST, numSprites * 6);
 	numSprites = 0;

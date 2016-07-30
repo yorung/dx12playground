@@ -430,3 +430,10 @@ void afBindCbv0Srv0(const void* buf, int size, SRVID srv)
 	deviceMan.AssignSRV(descriptorHeapIndex + 1, srv);
 	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
 }
+
+void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride)
+{
+	VBOID vbo = afCreateDynamicVertexBuffer(size, buf);
+	afSetVertexBuffer(vbo, stride);
+	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
+}

@@ -139,3 +139,5 @@ IVec2 afGetTextureSize(SRVID tex);
 void afBindCbv0(const void* buf, int size);
 void afBindSrv0(SRVID srv);
 void afBindCbv0Srv0(const void* buf, int size, SRVID srv);
+
+void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride);
