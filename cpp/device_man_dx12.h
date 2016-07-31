@@ -40,9 +40,6 @@ public:
 	void AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size);
 	void SetAssignedDescriptorHeap(int index);
 	ComPtr<ID3D12Device> GetDevice() { return device; }
-	ComPtr<IDXGIFactory4> GetFactory() { return factory; }
-	ComPtr<IDXGISwapChain3> GetSwapChain() { return swapChain; }
-	ComPtr<ID3D12Resource> GetRenderTarget() { return frameResources[frameIndex].renderTarget; }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList.Get(); }
 	void AddIntermediateCommandlistDependentResource(ComPtr<ID3D12Resource> intermediateResource);
 };
