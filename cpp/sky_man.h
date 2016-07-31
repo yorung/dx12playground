@@ -2,8 +2,7 @@ class SkyMan
 {
 	SRVID texId;
 	TexDesc texDesc;
-	ComPtr<ID3D12RootSignature> rootSignature;
-	ComPtr<ID3D12PipelineState> pipelineState;
+	AFRenderStates renderStates;
 public:
 	~SkyMan();
 	void Create(const char *texFileName, const char* shader);
