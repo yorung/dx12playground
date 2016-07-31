@@ -141,3 +141,24 @@ void afBindSrv0(SRVID srv);
 void afBindCbv0Srv0(const void* buf, int size, SRVID srv);
 
 void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride);
+
+class AFRenderStates {
+	ComPtr<ID3D12RootSignature> rootSignature;
+	ComPtr<ID3D12PipelineState> pipelineState;
+public:
+	bool IsReady() { return !!pipelineState; }
+	void Create(DescriptorLayout descriptorLayout, const char* shaderName, int numInputElements, const InputElement* inputElements, BlendMode blendMode_, DepthStencilMode depthStencilMode_, CullMode cullMode_, int numSamplerTypes_ = 0, const SamplerType samplerTypes_[] = nullptr)
+	{
+		rootSignature = afCreateRootSignature(descriptorLayout, numSamplerTypes_, samplerTypes_);
+		pipelineState = afCreatePSO(shaderName, inputElements, numInputElements, blendMode_, depthStencilMode_, cullMode_, rootSignature);
+	}
+	void Apply() const
+	{
+		afSetPipeline(pipelineState, rootSignature);
+	}
+	void Destroy()
+	{
+		pipelineState.Reset();
+		rootSignature.Reset();
+	}
+};

@@ -46,14 +46,11 @@ const static SamplerType samplers[] = {
 bool FontMan::Init()
 {
 	Destroy();
-	rootSignature = afCreateRootSignature(AFDL_SRV0, _countof(samplers), samplers);
-	pipelineState = afCreatePSO("font", elements, _countof(elements), BM_ALPHA, DSM_DISABLE, CM_DISABLE, rootSignature);
-
 	if (!texSrc.Create(TEX_W, TEX_H)) {
 		return false;
 	}
 	texture = afCreateDynamicTexture(AFDT_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
-	
+	renderStates.Create(AFDL_SRV0, "font", _countof(elements), elements, BM_ALPHA, DSM_DISABLE, CM_DISABLE, _countof(samplers), samplers);
 	ibo = afCreateQuadListIndexBuffer(SPRITE_MAX);
 	return true;
 }
@@ -61,8 +58,7 @@ bool FontMan::Init()
 void FontMan::Destroy()
 {
 	afSafeDeleteTexture(texture);
-	pipelineState.Reset();
-	rootSignature.Reset();
+	renderStates.Destroy();
 	texSrc.Destroy();
 	afSafeDeleteBuffer(ibo);
 	ClearCache();
@@ -150,7 +146,7 @@ void FontMan::Render()
 			verts[i * 4 + j].coord = (cc.srcPos + fontVertAlign[j] * cc.desc.srcWidth) / Vec2(TEX_W, TEX_H);
 		}
 	}
-	afSetPipeline(pipelineState, rootSignature);
+	renderStates.Apply();
 	afBindSrv0(texture);
 	afSetVertexBufferFromSystemMemory(verts, 4 * numSprites * sizeof(FontVertex), sizeof(FontVertex));
 	afSetIndexBuffer(ibo);

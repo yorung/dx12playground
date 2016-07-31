@@ -18,8 +18,7 @@ class FontMan
 	static const int SPRITE_VERTS = SPRITE_MAX * 4;
 	CharSprite charSprites[SPRITE_MAX];
 	int numSprites;
-	ComPtr<ID3D12RootSignature> rootSignature;
-	ComPtr<ID3D12PipelineState> pipelineState;
+	AFRenderStates renderStates;
 	IBOID ibo;
 	bool dirty = false;
 	bool Build(const CharSignature& signature);
