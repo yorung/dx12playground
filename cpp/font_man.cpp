@@ -51,7 +51,7 @@ bool FontMan::Init()
 	}
 	texture = afCreateDynamicTexture(AFDT_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
 	renderStates.Create(AFDL_SRV0, "font", _countof(elements), elements, BM_ALPHA, DSM_DISABLE, CM_DISABLE, _countof(samplers), samplers);
-	ibo = afCreateQuadListIndexBuffer(SPRITE_MAX);
+	quadListVertexBuffer.Create(elements, dimof(elements), sizeof(FontVertex), SPRITE_MAX);
 	return true;
 }
 
@@ -60,7 +60,7 @@ void FontMan::Destroy()
 	afSafeDeleteTexture(texture);
 	renderStates.Destroy();
 	texSrc.Destroy();
-	afSafeDeleteBuffer(ibo);
+	quadListVertexBuffer.Destroy();
 	ClearCache();
 }
 
@@ -147,16 +147,16 @@ void FontMan::Render()
 		}
 	}
 	renderStates.Apply();
+	quadListVertexBuffer.Apply();
+	quadListVertexBuffer.Write(verts, 4 * numSprites * sizeof(FontVertex));
 	afBindSrv0(texture);
-	afSetVertexBufferFromSystemMemory(verts, 4 * numSprites * sizeof(FontVertex), sizeof(FontVertex));
-	afSetIndexBuffer(ibo);
 	afDrawIndexed(PT_TRIANGLELIST, numSprites * 6);
 	numSprites = 0;
 }
 
 void FontMan::DrawChar(Vec2& pos, const CharSignature& sig)
 {
-	if (!ibo) {
+	if (!texture) {
 		return;
 	}
 

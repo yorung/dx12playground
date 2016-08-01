@@ -19,7 +19,7 @@ class FontMan
 	CharSprite charSprites[SPRITE_MAX];
 	int numSprites;
 	AFRenderStates renderStates;
-	IBOID ibo;
+	AFDynamicQuadListVertexBuffer quadListVertexBuffer;
 	bool dirty = false;
 	bool Build(const CharSignature& signature);
 	bool Cache(const CharSignature& code);
