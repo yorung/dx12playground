@@ -41,31 +41,6 @@ IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi);
 ComPtr<ID3D12Resource> afCreateDynamicVertexBuffer(int size, const void* buf = nullptr);
 UBOID afCreateUBO(int size);
 
-enum CullMode {
-	CM_DISABLE,
-	CM_CW,
-	CM_CCW,
-};
-enum BlendMode {
-	BM_NONE,
-	BM_ALPHA,
-};
-enum DepthStencilMode {
-	DSM_DISABLE,
-	DSM_DEPTH_ENABLE,
-	DSM_DEPTH_CLOSEREQUAL_READONLY,
-};
-
-enum SamplerType {
-	AFST_POINT_WRAP,
-	AFST_POINT_CLAMP,
-	AFST_LINEAR_WRAP,
-	AFST_LINEAR_CLAMP,
-	AFST_MIPMAP_WRAP,
-	AFST_MIPMAP_CLAMP,
-	AFST_MAX
-};
-
 class CDescriptorCBV : public D3D12_DESCRIPTOR_RANGE {
 public:
 	CDescriptorCBV(int shaderRegister) {
@@ -131,6 +106,12 @@ SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCo
 void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
 void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
 #define afCreateDynamicTexture afCreateTexture2D
+
+SRVID LoadTextureViaOS(const char* name, IVec2& size);
+IBOID afCreateTiledPlaneIBO(int numTiles, int* numIndies = nullptr);
+SRVID afLoadTexture(const char* name, TexDesc& desc);
+VBOID afCreateTiledPlaneVBO(int numTiles);
+IBOID afCreateQuadListIndexBuffer(int numQuads);
 
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);
 void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value);

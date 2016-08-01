@@ -25,8 +25,8 @@
 
 using Microsoft::WRL::ComPtr;
 #include "af_math.h"
-#include "helper_dx12.h"
 #include "helper.h"
+#include "helper_dx12.h"
 #include "helper_text.h"
 #include "device_man_dx12.h"
 #include "matrix_man.h"
