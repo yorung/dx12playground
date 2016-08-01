@@ -12,7 +12,6 @@ void ClearMenu();
 void AddMenu(const char *name, const char *cmd);
 void PostCommand(const char* cmdString);
 bool LoadImageViaGdiPlus(const char* name, IVec2& size, std::vector<uint32_t>& col);
-SRVID LoadTextureViaOS(const char* name, IVec2& size);
 
 template <class T> inline void SAFE_DELETE(T& p)
 {
@@ -28,17 +27,38 @@ template <class T> inline void SAFE_RELEASE(T& p)
 	}
 }
 
-IBOID afCreateTiledPlaneIBO(int numTiles, int* numIndies = nullptr);
-VBOID afCreateTiledPlaneVBO(int numTiles);
-IBOID afCreateQuadListIndexBuffer(int numQuads);
-
 struct TexDesc {
 	IVec2 size;
 	int arraySize = 1;
 	bool isCubeMap = false;
 };
 
-SRVID afLoadTexture(const char* name, TexDesc& desc);
+enum CullMode {
+	CM_DISABLE,
+	CM_CW,
+	CM_CCW,
+};
+
+enum BlendMode {
+	BM_NONE,
+	BM_ALPHA,
+};
+
+enum DepthStencilMode {
+	DSM_DISABLE,
+	DSM_DEPTH_ENABLE,
+	DSM_DEPTH_CLOSEREQUAL_READONLY,
+};
+
+enum SamplerType {
+	AFST_POINT_WRAP,
+	AFST_POINT_CLAMP,
+	AFST_LINEAR_WRAP,
+	AFST_LINEAR_CLAMP,
+	AFST_MIPMAP_WRAP,
+	AFST_MIPMAP_CLAMP,
+	AFST_MAX
+};
 
 struct CharSignature {
 	wchar_t code;
