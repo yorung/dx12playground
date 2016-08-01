@@ -435,3 +435,8 @@ void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride)
 	afSetVertexBuffer(vbo, stride);
 	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
 }
+
+void AFCbvBindToken::Create(const void* buf, int size)
+{
+	top = deviceMan.AssignConstantBuffer(buf, size);
+}
