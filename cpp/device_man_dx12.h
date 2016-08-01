@@ -37,6 +37,7 @@ public:
 	void Flush();
 	int AssignDescriptorHeap(int numRequired);
 	void AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> res);
+	int AssignConstantBuffer(const void* buf, int size);
 	void AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size);
 	void SetAssignedDescriptorHeap(int index);
 	ComPtr<ID3D12Device> GetDevice() { return device; }

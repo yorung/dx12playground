@@ -162,3 +162,14 @@ public:
 		rootSignature.Reset();
 	}
 };
+
+class AFCbvBindToken {
+public:
+	UBOID ubo;
+	int top = -1;
+	void Create(UBOID ubo_)
+	{
+		ubo = ubo_;
+	}
+	void Create(const void* buf, int size);
+};

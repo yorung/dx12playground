@@ -150,21 +150,32 @@ void DeviceManDX12::AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> re
 	device->CreateShaderResourceView(resToSrv.Get(), nullptr, ptr);
 }
 
-void DeviceManDX12::AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size)
+int DeviceManDX12::AssignConstantBuffer(const void* buf, int size)
 {
 	int sizeAligned = (size + 0xff) & ~0xff;
 	int numRequired = sizeAligned / 0x100;
 
 	if (numAssignedConstantBufferBlocks + numRequired > maxConstantBufferBlocks) {
 		assert(0);
-		return;
+		return -1;
 	}
 	int top = numAssignedConstantBufferBlocks;
 	numAssignedConstantBufferBlocks += numRequired;
 
 	FrameResources& res = frameResources[frameIndex];
-
 	memcpy(res.mappedConstantBuffer + top, buf, size);
+	return top;
+}
+
+void DeviceManDX12::AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size)
+{
+	int sizeAligned = (size + 0xff) & ~0xff;
+	int top = AssignConstantBuffer(buf, size);
+	if (top < 0) {
+		return;
+	}
+
+	FrameResources& res = frameResources[frameIndex];
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation = res.constantBuffer->GetGPUVirtualAddress() + top * 0x100;
