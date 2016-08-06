@@ -28,13 +28,14 @@ class DeviceManDX12
 	UINT frameIndex = 0;
 	void BeginScene();
 	void EndScene();
-	void SetRenderTarget();
 public:
 	~DeviceManDX12();
 	void Create(HWND hWnd);
 	void Destroy();
 	void Present();
 	void Flush();
+	void SetRenderTarget();
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() { return dsvHeap->GetCPUDescriptorHandleForHeapStart(); }
 	int AssignDescriptorHeap(int numRequired);
 	void AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> res);
 	int AssignConstantBuffer(const void* buf, int size);

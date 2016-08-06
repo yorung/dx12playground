@@ -60,6 +60,14 @@ void DeviceManDX12::Destroy()
 
 void DeviceManDX12::SetRenderTarget()
 {
+	DXGI_SWAP_CHAIN_DESC desc;
+	swapChain->GetDesc(&desc);
+
+	D3D12_VIEWPORT vp = { 0.f, 0.f, (float)desc.BufferDesc.Width, (float)desc.BufferDesc.Height, 0.f, 1.f };
+	D3D12_RECT rc = { 0, 0, (LONG)desc.BufferDesc.Width, (LONG)desc.BufferDesc.Height };
+	commandList->RSSetViewports(1, &vp);
+	commandList->RSSetScissorRects(1, &rc);
+
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 	rtvHandle.ptr += frameIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -86,16 +94,6 @@ void DeviceManDX12::BeginScene()
 
 	D3D12_RESOURCE_BARRIER barrier = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ res.renderTarget.Get(), 0, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET } };
 	commandList->ResourceBarrier(1, &barrier);
-
-	DXGI_SWAP_CHAIN_DESC desc;
-	swapChain->GetDesc(&desc);
-
-	D3D12_VIEWPORT vp = {0.f, 0.f, (float)desc.BufferDesc.Width, (float)desc.BufferDesc.Height, 0.f, 1.f};
-	D3D12_RECT rc = {0, 0, (LONG)desc.BufferDesc.Width, (LONG)desc.BufferDesc.Height};
-	commandList->RSSetViewports(1, &vp);
-	commandList->RSSetScissorRects(1, &rc);
-
-	SetRenderTarget();
 }
 
 void DeviceManDX12::EndScene()
@@ -307,7 +305,7 @@ void DeviceManDX12::Create(HWND hWnd)
 	}
 
 	IVec2 size = { (int)sd.BufferDesc.Width, (int)sd.BufferDesc.Height };
-	depthStencil = afCreateTexture2D(AFDT_DEPTH_STENCIL, size);
+	depthStencil = afCreateTexture2D(AFDT_DEPTH_STENCIL, size, nullptr, true);
 
 	const D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
 	device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));

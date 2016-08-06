@@ -1,4 +1,6 @@
 class App {
+	AFRenderTarget rt;
+	AFRenderStates rsPostProcess;
 public:
 	App();
 	void Init();
