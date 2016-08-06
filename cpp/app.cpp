@@ -19,12 +19,13 @@ void App::Draw()
 
 	triangle.Draw();
 	skyMan.Draw();
-	fontMan.Render();
 
 	rsPostProcess.Apply();
 	deviceMan.SetRenderTarget();
 	afBindSrv0(rt.GetTexture());
 	afDraw(PT_TRIANGLESTRIP, 4);
+
+	fontMan.Render();
 }
 
 void App::Init()
