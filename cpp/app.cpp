@@ -15,9 +15,16 @@ void App::Draw()
 	Mat proj = perspectiveLH(45.0f * (float)M_PI / 180.0f, aspect, n, f);
 	matrixMan.Set(MatrixMan::PROJ, proj);
 
+	rt.BeginRenderToThis();
+
 	triangle.Draw();
 	skyMan.Draw();
 	fontMan.Render();
+
+	rsPostProcess.Apply();
+	deviceMan.SetRenderTarget();
+	afBindSrv0(rt.GetTexture());
+	afDraw(PT_TRIANGLESTRIP, 4);
 }
 
 void App::Init()
@@ -27,6 +34,12 @@ void App::Init()
 	triangle.Create();
 	skyMan.Create("yangjae.dds", "sky_photosphere");
 	fontMan.Init();
+
+	IVec2 scrSize = systemMisc.GetScreenSize();
+	rt.Init(scrSize, AFDT_R8G8B8A8_UNORM, AFDT_DEPTH_STENCIL);
+
+	SamplerType sampler = AFST_POINT_CLAMP;
+	rsPostProcess.Create(AFDL_SRV0, "vivid", 0, nullptr, BM_NONE, DSM_DISABLE, CM_DISABLE, 1, &sampler);
 }
 
 void App::Destroy()
@@ -35,6 +48,8 @@ void App::Destroy()
 	triangle.Destroy();
 	skyMan.Destroy();
 	fontMan.Destroy();
+	rsPostProcess.Destroy();
+	rt.Destroy();
 }
 
 void App::Update()
