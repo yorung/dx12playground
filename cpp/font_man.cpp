@@ -152,6 +152,7 @@ void FontMan::Render()
 	afBindSrv0(texture);
 	afDrawIndexed(PT_TRIANGLELIST, numSprites * 6);
 	numSprites = 0;
+	afBindVAO(0);
 }
 
 void FontMan::DrawChar(Vec2& pos, const CharSignature& sig)

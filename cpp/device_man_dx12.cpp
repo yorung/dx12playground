@@ -165,24 +165,44 @@ int DeviceManDX12::AssignConstantBuffer(const void* buf, int size)
 	return top;
 }
 
-void DeviceManDX12::AssignConstantBuffer(int descriptorHeapIndex, const void* buf, int size)
+void DeviceManDX12::AssignCBV(int descriptorHeapIndex, int constantBufferTop, int size)
 {
 	int sizeAligned = (size + 0xff) & ~0xff;
-	int top = AssignConstantBuffer(buf, size);
-	if (top < 0) {
-		return;
-	}
-
 	FrameResources& res = frameResources[frameIndex];
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = res.constantBuffer->GetGPUVirtualAddress() + top * 0x100;
+	cbvDesc.BufferLocation = res.constantBuffer->GetGPUVirtualAddress() + constantBufferTop * 0x100;
 	cbvDesc.SizeInBytes = sizeAligned;
 	assert((cbvDesc.SizeInBytes & 0xff) == 0);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE ptr = res.srvHeap->GetCPUDescriptorHandleForHeapStart();
 	ptr.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
 	device->CreateConstantBufferView(&cbvDesc, ptr);
+}
+
+void DeviceManDX12::AssignCBV(int descriptorHeapIndex, ComPtr<ID3D12Resource> ubo)
+{
+	D3D12_RESOURCE_DESC desc = ubo->GetDesc();
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = ubo->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = (UINT)desc.Width;
+	assert((cbvDesc.SizeInBytes & 0xff) == 0);
+
+	FrameResources& res = frameResources[frameIndex];
+	D3D12_CPU_DESCRIPTOR_HANDLE ptr = res.srvHeap->GetCPUDescriptorHandleForHeapStart();
+	ptr.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
+	device->CreateConstantBufferView(&cbvDesc, ptr);
+}
+
+void DeviceManDX12::AssignCBVAndConstantBuffer(int descriptorHeapIndex, const void* buf, int size)
+{
+	int top = AssignConstantBuffer(buf, size);
+	if (top < 0) {
+		assert(0);
+		return;
+	}
+	AssignCBV(descriptorHeapIndex, top, size);
 }
 
 void DeviceManDX12::SetAssignedDescriptorHeap(int descriptorHeapIndex)

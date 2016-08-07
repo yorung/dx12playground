@@ -45,6 +45,19 @@ void afSetVertexBuffer(VBOID id, int stride)
 	list->IASetVertexBuffers(0, 1, &vertexBufferView);
 }
 
+void afSetVertexBuffers(int numIds, VBOID ids[], int strides[])
+{
+	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
+	D3D12_VERTEX_BUFFER_VIEW views[10];
+	assert(numIds < _countof(views));
+	for (int i = 0; i < numIds; i++) {
+		D3D12_RESOURCE_DESC desc = ids[i]->GetDesc();
+		views[i] = { ids[i]->GetGPUVirtualAddress(), (UINT)desc.Width, (UINT)strides[i] };
+	}
+
+	list->IASetVertexBuffers(0, numIds, views);
+}
+
 void afSetIndexBuffer(IBOID id)
 {
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
@@ -421,7 +434,7 @@ IVec2 afGetTextureSize(SRVID tex)
 void afBindCbv0(const void* buf, int size)
 {
 	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
-	deviceMan.AssignConstantBuffer(descriptorHeapIndex, buf, size);
+	deviceMan.AssignCBVAndConstantBuffer(descriptorHeapIndex, buf, size);
 	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
 }
 
@@ -435,7 +448,7 @@ void afBindSrv0(SRVID srv)
 void afBindCbv0Srv0(const void* buf, int size, SRVID srv)
 {
 	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(2);
-	deviceMan.AssignConstantBuffer(descriptorHeapIndex, buf, size);
+	deviceMan.AssignCBVAndConstantBuffer(descriptorHeapIndex, buf, size);
 	deviceMan.AssignSRV(descriptorHeapIndex + 1, srv);
 	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
 }
@@ -461,11 +474,6 @@ void AFDynamicQuadListVertexBuffer::Write(const void* buf, int size)
 	VBOID vbo = afCreateDynamicVertexBuffer(size, buf);
 	afSetVertexBuffer(vbo, stride);
 	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
-}
-
-void AFCbvBindToken::Create(const void* buf, int size)
-{
-	top = deviceMan.AssignConstantBuffer(buf, size);
 }
 
 void AFRenderTarget::InitForDefaultRenderTarget()
@@ -506,4 +514,47 @@ void AFRenderTarget::BeginRenderToThis()
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+}
+
+FakeVAO::FakeVAO(int numBuffers, VBOID vbos_[], const int strides_[], const UINT offsets_[], IBOID ibo_)
+{
+	ibo = ibo_;
+	vbos.resize(numBuffers);
+	d3dBuffers.resize(numBuffers);
+	strides.resize(numBuffers);
+	offsets.resize(numBuffers);
+	for (int i = 0; i < numBuffers; i++) {
+		vbos[i] = vbos_[i];
+		d3dBuffers[i] = vbos[i];
+		strides[i] = (UINT)strides_[i];
+		offsets[i] = offsets_ ? offsets_[i] : 0;
+	}
+}
+
+void FakeVAO::Apply()
+{
+	afSetVertexBuffers((int)vbos.size(), &d3dBuffers[0], &strides[0]);
+	afSetIndexBuffer(ibo);
+}
+
+void afBindCbvs(AFCbvBindToken cbvs[], int nCbvs)
+{
+	int top = deviceMan.AssignDescriptorHeap(nCbvs);
+	for (int i = 0; i < nCbvs; i++) {
+		AFCbvBindToken& cbv = cbvs[i];
+		if (cbv.top >= 0) {
+			deviceMan.AssignCBV(top + i, cbv.top, cbv.size);
+		} else if (cbv.ubo) {
+			deviceMan.AssignCBV(top + i, cbv.ubo);
+		} else {
+			assert(0);
+		}
+	}
+}
+
+void afBindVAO(const VAOID& vao)
+{
+	if (vao) {
+		vao->Apply();
+	}
 }

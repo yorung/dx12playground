@@ -4,6 +4,8 @@ ComPtr<ID3DBlob> afCompileShader(const char* name, const char* entryPoint, const
 #define SF_R32G32B32_FLOAT DXGI_FORMAT_R32G32B32_FLOAT
 #define SF_R32G32B32A32_FLOAT DXGI_FORMAT_R32G32B32A32_FLOAT
 #define SF_R8G8B8A8_UNORM DXGI_FORMAT_R8G8B8A8_UNORM
+#define SF_R32_UINT DXGI_FORMAT_R32_UINT
+#define SF_R8G8B8A8_UINT DXGI_FORMAT_R8G8B8A8_UINT
 
 typedef D3D12_INPUT_ELEMENT_DESC InputElement;
 
@@ -33,6 +35,7 @@ inline void afSafeDeleteTexture(SRVID& p) { p.Reset(); }
 void afSetPipeline(ComPtr<ID3D12PipelineState> ps, ComPtr<ID3D12RootSignature> rs);
 void afSetDescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap);
 void afSetVertexBuffer(VBOID id, int stride);
+void afSetVertexBuffers(int numIds, VBOID ids[], int strides[]);
 void afSetIndexBuffer(IBOID id);
 void afWriteBuffer(const IBOID id, const void* buf, int size);
 ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf = nullptr);
@@ -166,12 +169,19 @@ class AFCbvBindToken {
 public:
 	UBOID ubo;
 	int top = -1;
+	int size = 0;
 	void Create(UBOID ubo_)
 	{
 		ubo = ubo_;
 	}
-	void Create(const void* buf, int size);
+	void Create(const void* buf, int size)
+	{
+		top = deviceMan.AssignConstantBuffer(buf, size);
+		size = size;
+	}
 };
+
+void afBindCbvs(AFCbvBindToken cbvs[], int nCbvs);
 
 class AFRenderTarget
 {
@@ -186,3 +196,20 @@ public:
 	void BeginRenderToThis();
 	ComPtr<ID3D12Resource> GetTexture() { return renderTarget; }
 };
+
+class FakeVAO
+{
+	std::vector<VBOID> vbos;
+	std::vector<ComPtr<ID3D12Resource>> d3dBuffers;
+	std::vector<UINT> offsets;
+	std::vector<int> strides;
+	ComPtr<ID3D12Resource> ibo;
+public:
+	FakeVAO(int numBuffers, VBOID buffers[], const int strides[], const UINT offsets[], IBOID ibo);
+	void Apply();
+};
+
+typedef std::unique_ptr<FakeVAO> VAOID;
+VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, VBOID const vertexBufferIds[], const int strides[], IBOID ibo);
+void afBindVAO(const VAOID& vao);
+inline void afSafeDeleteVAO(VAOID& p) { p.reset(); }

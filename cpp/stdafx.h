@@ -20,15 +20,16 @@
 #include <map>
 #include <random>
 #include <chrono>
+#include <memory>
 
 #include <assert.h>
 
 using Microsoft::WRL::ComPtr;
 #include "af_math.h"
+#include "device_man_dx12.h"
 #include "helper.h"
 #include "helper_dx12.h"
 #include "helper_text.h"
-#include "device_man_dx12.h"
 #include "matrix_man.h"
 #include "dev_camera.h"
 #include "system_misc.h"
