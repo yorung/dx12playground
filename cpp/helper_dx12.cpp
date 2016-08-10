@@ -481,6 +481,7 @@ void AFDynamicQuadListVertexBuffer::Create(const InputElement*, int, int vertexS
 	stride = vertexSize_;
 	vertexBufferSize = nQuad * vertexSize_ * 4;
 	ibo = afCreateQuadListIndexBuffer(nQuad);
+	ibo->SetName(L"index buffer for quad list");
 }
 
 void AFDynamicQuadListVertexBuffer::Write(const void* buf, int size)

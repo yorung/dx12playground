@@ -320,6 +320,7 @@ void DeviceManDX12::Create(HWND hWnd)
 		device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&res.srvHeap));
 
 		res.constantBuffer = afCreateUBO(maxConstantBufferBlocks * 0x100);
+		res.constantBuffer->SetName(L"DeviceMan constant buffer");
 		D3D12_RANGE readRange = {};
 		HRESULT hr = res.constantBuffer->Map(0, &readRange, (void**)&res.mappedConstantBuffer);
 		assert(hr == S_OK);
