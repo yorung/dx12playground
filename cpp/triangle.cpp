@@ -48,7 +48,7 @@ void Triangle::Create()
 	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
 	ibo = afCreateIndexBuffer(indices, _countof(indices));
 	rootSignature = afCreateRootSignature(AFDL_CBV0, 0, nullptr);
-	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature);
+	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 }
 
 void Triangle::Destroy()

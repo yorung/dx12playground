@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#ifdef __d3d12_h__
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -342,3 +344,5 @@ void DeviceManDX12::Create(HWND hWnd)
 	}
 	BeginScene();
 }
+
+#endif

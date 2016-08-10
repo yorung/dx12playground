@@ -50,7 +50,7 @@ bool FontMan::Init()
 		return false;
 	}
 	texture = afCreateDynamicTexture(AFDT_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
-	renderStates.Create(AFDL_SRV0, "font", _countof(elements), elements, BM_ALPHA, DSM_DISABLE, CM_DISABLE, _countof(samplers), samplers);
+	renderStates.Create(AFDL_SRV0, "font", dimof(elements), elements, BM_ALPHA, DSM_DISABLE, CM_DISABLE, dimof(samplers), samplers);
 	quadListVertexBuffer.Create(elements, dimof(elements), sizeof(FontVertex), SPRITE_MAX);
 	return true;
 }

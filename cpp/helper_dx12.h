@@ -66,15 +66,7 @@ public:
 	}
 };
 
-enum DescriptorLayout
-{
-	AFDL_NONE,
-	AFDL_CBV0,
-	AFDL_SRV0,
-	AFDL_CBV0_SRV0,
-};
-
-ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature);
+ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology);
 ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLayout, int numSamplers, const SamplerType samplers[]);
 
 #define PrimitiveTopology D3D_PRIMITIVE_TOPOLOGY
@@ -120,10 +112,6 @@ ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);
 void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value);
 IVec2 afGetTextureSize(SRVID tex);
 
-void afBindCbv0(const void* buf, int size);
-void afBindSrv0(SRVID srv);
-void afBindCbv0Srv0(const void* buf, int size, SRVID srv);
-
 void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride);
 
 class AFRenderStates {
@@ -131,10 +119,10 @@ class AFRenderStates {
 	ComPtr<ID3D12PipelineState> pipelineState;
 public:
 	bool IsReady() { return !!pipelineState; }
-	void Create(DescriptorLayout descriptorLayout, const char* shaderName, int numInputElements, const InputElement* inputElements, BlendMode blendMode_, DepthStencilMode depthStencilMode_, CullMode cullMode_, int numSamplerTypes_ = 0, const SamplerType samplerTypes_[] = nullptr)
+	void Create(DescriptorLayout descriptorLayout, const char* shaderName, int numInputElements, const InputElement* inputElements, BlendMode blendMode_, DepthStencilMode depthStencilMode_, CullMode cullMode_, int numSamplerTypes_ = 0, const SamplerType samplerTypes_[] = nullptr, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE)
 	{
 		rootSignature = afCreateRootSignature(descriptorLayout, numSamplerTypes_, samplerTypes_);
-		pipelineState = afCreatePSO(shaderName, inputElements, numInputElements, blendMode_, depthStencilMode_, cullMode_, rootSignature);
+		pipelineState = afCreatePSO(shaderName, inputElements, numInputElements, blendMode_, depthStencilMode_, cullMode_, rootSignature, primitiveTopology);
 	}
 	void Apply() const
 	{
@@ -174,10 +162,10 @@ public:
 	{
 		ubo = ubo_;
 	}
-	void Create(const void* buf, int size)
+	void Create(const void* buf, int size_)
 	{
-		top = deviceMan.AssignConstantBuffer(buf, size);
-		size = size;
+		top = deviceMan.AssignConstantBuffer(buf, size_);
+		size = size_;
 	}
 };
 
@@ -188,6 +176,7 @@ class AFRenderTarget
 	IVec2 texSize;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 	ComPtr<ID3D12Resource> renderTarget;
+	bool asDefault = false;
 public:
 	~AFRenderTarget() { Destroy(); }
 	void InitForDefaultRenderTarget();
@@ -200,12 +189,11 @@ public:
 class FakeVAO
 {
 	std::vector<VBOID> vbos;
-	std::vector<ComPtr<ID3D12Resource>> d3dBuffers;
 	std::vector<UINT> offsets;
 	std::vector<int> strides;
 	ComPtr<ID3D12Resource> ibo;
 public:
-	FakeVAO(int numBuffers, VBOID buffers[], const int strides[], const UINT offsets[], IBOID ibo);
+	FakeVAO(int numBuffers, VBOID const buffers[], const int strides[], const UINT offsets[], IBOID ibo);
 	void Apply();
 };
 
@@ -213,3 +201,8 @@ typedef std::unique_ptr<FakeVAO> VAOID;
 VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, VBOID const vertexBufferIds[], const int strides[], IBOID ibo);
 void afBindVAO(const VAOID& vao);
 inline void afSafeDeleteVAO(VAOID& p) { p.reset(); }
+
+void afBindCbv0(const void* buf, int size);
+void afBindSrv0(SRVID srv);
+void afBindCbv0Srv0(const void* buf, int size, SRVID srv);
+void afBindCbvsSrv0(AFCbvBindToken cbvs[], int nCbvs, SRVID srv);

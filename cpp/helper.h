@@ -60,6 +60,17 @@ enum SamplerType {
 	AFST_MAX
 };
 
+enum DescriptorLayout
+{
+	AFDL_NONE,
+	AFDL_CBV0,
+	AFDL_SRV0,
+	AFDL_CBV0_SRV0,
+	AFDL_CBV012_SRV0,
+	AFDL_CBV0_SRV012345,
+	AFDL_SRV0123456,
+};
+
 struct CharSignature {
 	wchar_t code;
 	int fontSize;

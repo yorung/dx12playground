@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#ifdef __d3d12_h__
+
 static const D3D12_HEAP_PROPERTIES defaultHeapProperties = { D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 static const D3D12_HEAP_PROPERTIES uploadHeapProperties = { D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 static const float clearColor[] = { 0.0f, 0.2f, 0.3f, 1.0f };
@@ -88,7 +90,8 @@ ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf)
 {
 	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN, { 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
 	UBOID o;
-	deviceMan.GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&o));
+	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&o));
+	assert(hr == S_OK);
 	if (buf) {
 		afWriteBuffer(o, buf, size);
 	}
@@ -265,7 +268,7 @@ void afDraw(PrimitiveTopology pt, int numVertices, int start, int instanceCount)
 	list->DrawInstanced(numVertices, instanceCount, start, 0);
 }
 
-ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature)
+ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology)
 {
 	ComPtr<ID3DBlob> vertexShader = afCompileShader(shaderName, "VSMain", "vs_5_0");
 	ComPtr<ID3DBlob> pixelShader = afCompileShader(shaderName, "PSMain", "ps_5_0");
@@ -296,10 +299,10 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	psoDesc.pRootSignature = rootSignature.Get();
 	psoDesc.VS = { reinterpret_cast<UINT8*>(vertexShader->GetBufferPointer()), vertexShader->GetBufferSize() };
 	psoDesc.PS = { reinterpret_cast<UINT8*>(pixelShader->GetBufferPointer()), pixelShader->GetBufferSize() };
-	psoDesc.RasterizerState = { D3D12_FILL_MODE_SOLID, cullMode == CM_CCW ? D3D12_CULL_MODE_BACK : cullMode == CM_CW ? D3D12_CULL_MODE_FRONT : D3D12_CULL_MODE_NONE };
+	psoDesc.RasterizerState = { D3D12_FILL_MODE_SOLID, cullMode == CM_CCW ? D3D12_CULL_MODE_FRONT : cullMode == CM_CW ? D3D12_CULL_MODE_BACK : D3D12_CULL_MODE_NONE };
 	psoDesc.DepthStencilState = { depthStencilMode != DSM_DISABLE, D3D12_DEPTH_WRITE_MASK_ALL, depthStencilMode == DSM_DEPTH_CLOSEREQUAL_READONLY ? D3D12_COMPARISON_FUNC_LESS_EQUAL : D3D12_COMPARISON_FUNC_LESS };
 	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.PrimitiveTopologyType = primitiveTopology;
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.DSVFormat = AFDT_DEPTH_STENCIL;
@@ -370,6 +373,18 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 		{
 			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 				CDescriptorCBV(0),
+				CDescriptorSRV(0),
+			};
+			rootParameter.DescriptorTable.NumDescriptorRanges = _countof(descriptors);
+			rootParameter.DescriptorTable.pDescriptorRanges = descriptors;
+			break;
+		}
+	case AFDL_CBV012_SRV0:
+		{
+			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
+				CDescriptorCBV(0),
+				CDescriptorCBV(1),
+				CDescriptorCBV(2),
 				CDescriptorSRV(0),
 			};
 			rootParameter.DescriptorTable.NumDescriptorRanges = _countof(descriptors);
@@ -478,7 +493,7 @@ void AFDynamicQuadListVertexBuffer::Write(const void* buf, int size)
 
 void AFRenderTarget::InitForDefaultRenderTarget()
 {
-	assert(0);
+	asDefault = true;
 }
 
 void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthStencilFormat)
@@ -502,6 +517,11 @@ void AFRenderTarget::Destroy()
 
 void AFRenderTarget::BeginRenderToThis()
 {
+	if (asDefault) {
+		deviceMan.SetRenderTarget();
+		return;
+	}
+
 	D3D12_VIEWPORT vp = { 0.f, 0.f, (float)texSize.x, (float)texSize.y, 0.f, 1.f };
 	D3D12_RECT rc = { 0, 0, (LONG)texSize.x, (LONG)texSize.y };
 	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
@@ -516,16 +536,14 @@ void AFRenderTarget::BeginRenderToThis()
 	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 }
 
-FakeVAO::FakeVAO(int numBuffers, VBOID vbos_[], const int strides_[], const UINT offsets_[], IBOID ibo_)
+FakeVAO::FakeVAO(int numBuffers, VBOID const vbos_[], const int strides_[], const UINT offsets_[], IBOID ibo_)
 {
 	ibo = ibo_;
 	vbos.resize(numBuffers);
-	d3dBuffers.resize(numBuffers);
 	strides.resize(numBuffers);
 	offsets.resize(numBuffers);
 	for (int i = 0; i < numBuffers; i++) {
 		vbos[i] = vbos_[i];
-		d3dBuffers[i] = vbos[i];
 		strides[i] = (UINT)strides_[i];
 		offsets[i] = offsets_ ? offsets_[i] : 0;
 	}
@@ -533,23 +551,51 @@ FakeVAO::FakeVAO(int numBuffers, VBOID vbos_[], const int strides_[], const UINT
 
 void FakeVAO::Apply()
 {
-	afSetVertexBuffers((int)vbos.size(), &d3dBuffers[0], &strides[0]);
-	afSetIndexBuffer(ibo);
+	afSetVertexBuffers((int)vbos.size(), vbos.data(), strides.data());
+	if (ibo) {
+		afSetIndexBuffer(ibo);
+	}
 }
 
 void afBindCbvs(AFCbvBindToken cbvs[], int nCbvs)
 {
-	int top = deviceMan.AssignDescriptorHeap(nCbvs);
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(nCbvs);
 	for (int i = 0; i < nCbvs; i++) {
 		AFCbvBindToken& cbv = cbvs[i];
 		if (cbv.top >= 0) {
-			deviceMan.AssignCBV(top + i, cbv.top, cbv.size);
+			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.top, cbv.size);
 		} else if (cbv.ubo) {
-			deviceMan.AssignCBV(top + i, cbv.ubo);
+			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.ubo);
 		} else {
 			assert(0);
 		}
 	}
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+}
+
+void afBindCbvsSrv0(AFCbvBindToken cbvs[], int nCbvs, SRVID srv)
+{
+	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(nCbvs + 1);
+	for (int i = 0; i < nCbvs; i++) {
+		AFCbvBindToken& cbv = cbvs[i];
+		if (cbv.top >= 0) {
+			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.top, cbv.size);
+		} else if (cbv.ubo) {
+			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.ubo);
+		} else {
+			assert(0);
+		}
+	}
+	deviceMan.AssignSRV(descriptorHeapIndex + nCbvs, srv);
+	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex);
+}
+
+VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, VBOID const vertexBufferIds[], const int strides[], IBOID ibo)
+{
+	(void)elements;
+	(void)numElements;
+	VAOID p(new FakeVAO(numBuffers, vertexBufferIds, strides, nullptr, ibo));
+	return p;
 }
 
 void afBindVAO(const VAOID& vao)
@@ -558,3 +604,5 @@ void afBindVAO(const VAOID& vao)
 		vao->Apply();
 	}
 }
+
+#endif
