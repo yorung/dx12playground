@@ -85,11 +85,8 @@ void DeviceManDX12::BeginScene()
 	afWaitFenceValue(fence, res.fenceValueToGuard);
 
 	res.intermediateCommandlistDependentResources.clear();
-
 	res.commandAllocator->Reset();
-	commandList->Reset(res.commandAllocator.Get(), nullptr);
-	ID3D12DescriptorHeap* ppHeaps[] = { res.srvHeap.Get() };
-	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	ResetCommandListAndSetDescriptorHeap();
 
 	D3D12_RESOURCE_BARRIER barrier = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ res.renderTarget.Get(), 0, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET } };
 	commandList->ResourceBarrier(1, &barrier);
@@ -124,8 +121,15 @@ void DeviceManDX12::Flush()
 		res.commandAllocator->Reset();
 		res.intermediateCommandlistDependentResources.clear();
 	}
+	ResetCommandListAndSetDescriptorHeap();
+}
+
+void DeviceManDX12::ResetCommandListAndSetDescriptorHeap()
+{
 	FrameResources& res = frameResources[frameIndex];
 	commandList->Reset(res.commandAllocator.Get(), nullptr);
+	ID3D12DescriptorHeap* ppHeaps[] = { res.srvHeap.Get() };
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 }
 
 int DeviceManDX12::AssignDescriptorHeap(int numRequired)

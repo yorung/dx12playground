@@ -27,6 +27,7 @@ class DeviceManDX12
 	UINT frameIndex = 0;
 	void BeginScene();
 	void EndScene();
+	void ResetCommandListAndSetDescriptorHeap();
 public:
 	~DeviceManDX12();
 	void Create(HWND hWnd);
