@@ -150,7 +150,7 @@ void FontMan::Render()
 	renderStates.Apply();
 	quadListVertexBuffer.Apply();
 	quadListVertexBuffer.Write(verts, 4 * numSprites * sizeof(FontVertex));
-	afBindSrv0(texture);
+	afBindTextureToBindingPoint(texture, 0);
 	afDrawIndexed(PT_TRIANGLELIST, numSprites * 6);
 	numSprites = 0;
 	afBindVAO(0);

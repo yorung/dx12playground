@@ -38,7 +38,7 @@ void Triangle::Draw()
 	Mat matView = lookatLH(Vec3(0, 0, -1), Vec3(0, 0, 0), Vec3(0, 1, 0));
 	for (int i = 0; i < dimof(matWorld); i++) {
 		Mat m = matWorld[i] * matView * matProj;
-		afBindBufferToRoot(&m, sizeof(m), 0);
+		afBindBufferToBindingPoint(&m, sizeof(m), 0);
 		afDrawIndexed(PT_TRIANGLELIST, 3);
 	}
 }
@@ -49,7 +49,7 @@ void Triangle::Create()
 	ibo = afCreateIndexBuffer(indices, _countof(indices));
 	vbo->SetName(L"Triangle vertex bugger");
 	ibo->SetName(L"Triangle index bugger");
-	rootSignature = afCreateRootSignature(AFDL_ROOTCBV0, 0, nullptr);
+	rootSignature = afCreateRootSignature(AFDL_CBV0, 0, nullptr);
 	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 }
 

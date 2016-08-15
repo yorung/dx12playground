@@ -364,64 +364,37 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 	}
 
 	UINT numRootParameters = 0;
-	D3D12_ROOT_PARAMETER rootParameters[2] = {};
+	D3D12_ROOT_PARAMETER rootParameters[4] = {};
+	static D3D12_DESCRIPTOR_RANGE descriptors[] =
+	{
+		CDescriptorSRV(0),
+	};
 	switch (descriptorLayout) {
 	case AFDL_NONE:
 		numRootParameters = 0;
 		break;
-	case AFDL_ROOTCBV0:
+	case AFDL_CBV0:
 		{
 			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			numRootParameters = 1;
 			break;
 		}
-	case AFDL_ROOTCBV0_SRV0:
+	case AFDL_CBV0_SRV0:
 		{
 			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 			rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-				CDescriptorSRV(0),
-			};
 			rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
 			rootParameters[1].DescriptorTable.pDescriptorRanges = descriptors;
 			numRootParameters = 2;
-			break;
-		}
-	case AFDL_CBV0:
-		{
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-				CDescriptorCBV(0),
-			};
-			rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
-			rootParameters[0].DescriptorTable.pDescriptorRanges = descriptors;
-			numRootParameters = 1;
 			break;
 		}
 	case AFDL_SRV0:
 		{
 			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-				CDescriptorSRV(0),
-			};
-			rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
-			rootParameters[0].DescriptorTable.pDescriptorRanges = descriptors;
-			numRootParameters = 1;
-			break;
-		}
-	case AFDL_CBV0_SRV0:
-		{
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-				CDescriptorCBV(0),
-				CDescriptorSRV(0),
-			};
 			rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
 			rootParameters[0].DescriptorTable.pDescriptorRanges = descriptors;
 			numRootParameters = 1;
@@ -429,17 +402,14 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 		}
 	case AFDL_CBV012_SRV0:
 		{
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
-				CDescriptorCBV(0),
-				CDescriptorCBV(1),
-				CDescriptorCBV(2),
-				CDescriptorSRV(0),
-			};
-			rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
-			rootParameters[0].DescriptorTable.pDescriptorRanges = descriptors;
-			numRootParameters = 1;
+			for (int i = 0; i < 3; i++) {
+				rootParameters[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+				rootParameters[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+				rootParameters[i].Descriptor.ShaderRegister = i;
+			}
+			rootParameters[3].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
+			rootParameters[3].DescriptorTable.pDescriptorRanges = descriptors;
+			numRootParameters = 4;
 			break;
 		}
 	}
@@ -497,26 +467,11 @@ IVec2 afGetTextureSize(SRVID tex)
 	return IVec2((int)desc.Width, (int)desc.Height);
 }
 
-void afBindCbv0(const void* buf, int size)
-{
-	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
-	deviceMan.AssignCBVAndConstantBuffer(descriptorHeapIndex, buf, size);
-	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex, 0);
-}
-
-void afBindSrv0(SRVID srv, int rootParameterIndex)
+void afBindTextureToBindingPoint(SRVID srv, int rootParameterIndex)
 {
 	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(1);
 	deviceMan.AssignSRV(descriptorHeapIndex, srv);
 	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex, rootParameterIndex);
-}
-
-void afBindCbv0Srv0(const void* buf, int size, SRVID srv)
-{
-	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(2);
-	deviceMan.AssignCBVAndConstantBuffer(descriptorHeapIndex, buf, size);
-	deviceMan.AssignSRV(descriptorHeapIndex + 1, srv);
-	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex, 0);
 }
 
 void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride)
@@ -609,35 +564,27 @@ void FakeVAO::Apply()
 
 void afBindCbvs(AFCbvBindToken cbvs[], int nCbvs)
 {
-	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(nCbvs);
 	for (int i = 0; i < nCbvs; i++) {
 		AFCbvBindToken& cbv = cbvs[i];
 		if (cbv.top >= 0) {
-			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.top, cbv.size);
+			deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(i, deviceMan.GetConstantBufferGPUAddress(cbv.top));
 		} else if (cbv.ubo) {
-			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.ubo);
+			afBindBufferToBindingPoint(cbv.ubo, i);
 		} else {
 			assert(0);
 		}
 	}
-	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex, 0);
 }
 
-void afBindCbvsSrv0(AFCbvBindToken cbvs[], int nCbvs, SRVID srv)
+void afBindBufferToBindingPoint(const void* buf, int size, int rootParameterIndex)
 {
-	int descriptorHeapIndex = deviceMan.AssignDescriptorHeap(nCbvs + 1);
-	for (int i = 0; i < nCbvs; i++) {
-		AFCbvBindToken& cbv = cbvs[i];
-		if (cbv.top >= 0) {
-			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.top, cbv.size);
-		} else if (cbv.ubo) {
-			deviceMan.AssignCBV(descriptorHeapIndex + i, cbv.ubo);
-		} else {
-			assert(0);
-		}
-	}
-	deviceMan.AssignSRV(descriptorHeapIndex + nCbvs, srv);
-	deviceMan.SetAssignedDescriptorHeap(descriptorHeapIndex, 0);
+	int cbTop = deviceMan.AssignConstantBuffer(buf, size);
+	deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(rootParameterIndex, deviceMan.GetConstantBufferGPUAddress(cbTop));
+}
+
+void afBindBufferToBindingPoint(UBOID ubo, int rootParameterIndex)
+{
+	deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(rootParameterIndex, ubo->GetGPUVirtualAddress());
 }
 
 VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, VBOID const vertexBufferIds[], const int strides[], IBOID ibo)

@@ -22,7 +22,7 @@ void App::Draw()
 
 	rsPostProcess.Apply();
 	deviceMan.SetRenderTarget();
-	afBindSrv0(rt.GetTexture());
+	afBindTextureToBindingPoint(rt.GetTexture(), 0);
 	afDraw(PT_TRIANGLESTRIP, 4);
 
 	fontMan.Render();
