@@ -180,16 +180,19 @@ int DeviceManDX12::AssignConstantBuffer(const void* buf, int size)
 	return top;
 }
 
+D3D12_GPU_VIRTUAL_ADDRESS DeviceManDX12::GetConstantBufferGPUAddress(int constantBufferTop)
+{
+	FrameResources& res = frameResources[frameIndex];
+	return res.constantBuffer->GetGPUVirtualAddress() + constantBufferTop * 0x100;
+}
+
 void DeviceManDX12::AssignCBV(int descriptorHeapIndex, int constantBufferTop, int size)
 {
-	int sizeAligned = (size + 0xff) & ~0xff;
-	FrameResources& res = frameResources[frameIndex];
-
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = res.constantBuffer->GetGPUVirtualAddress() + constantBufferTop * 0x100;
-	cbvDesc.SizeInBytes = sizeAligned;
+	UINT sizeAligned = (size + 0xff) & ~0xff;
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { GetConstantBufferGPUAddress(constantBufferTop), sizeAligned };
 	assert((cbvDesc.SizeInBytes & 0xff) == 0);
 
+	FrameResources& res = frameResources[frameIndex];
 	D3D12_CPU_DESCRIPTOR_HANDLE ptr = res.srvHeap->GetCPUDescriptorHandleForHeapStart();
 	ptr.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
 	device->CreateConstantBufferView(&cbvDesc, ptr);

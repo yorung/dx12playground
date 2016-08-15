@@ -62,6 +62,7 @@ enum SamplerType {
 enum DescriptorLayout
 {
 	AFDL_NONE,
+	AFDL_ROOTCBV0,
 	AFDL_CBV0,
 	AFDL_SRV0,
 	AFDL_CBV0_SRV0,

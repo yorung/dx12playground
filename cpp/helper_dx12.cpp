@@ -342,11 +342,17 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 	}
 
 	D3D12_ROOT_PARAMETER rootParameter = {};
-	rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	switch (descriptorLayout) {
+	case AFDL_ROOTCBV0:
+		{
+			rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+			break;
+		}
 	case AFDL_CBV0:
 		{
+			rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 				CDescriptorCBV(0),
 			};
@@ -356,6 +362,8 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 		}
 	case AFDL_SRV0:
 		{
+			rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 				CDescriptorSRV(0),
 			};
@@ -365,6 +373,8 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 		}
 	case AFDL_CBV0_SRV0:
 		{
+			rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 				CDescriptorCBV(0),
 				CDescriptorSRV(0),
@@ -375,6 +385,8 @@ ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLay
 		}
 	case AFDL_CBV012_SRV0:
 		{
+			rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			static D3D12_DESCRIPTOR_RANGE descriptors[] = {
 				CDescriptorCBV(0),
 				CDescriptorCBV(1),
