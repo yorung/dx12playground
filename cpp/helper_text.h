@@ -44,7 +44,7 @@ template <int BUF_LEN> class TSWPrintf{
 		memset( this, 0, sizeof*this );
 		va_list argptr;
 		va_start( argptr, format );
-		vswprintf( m_buf, format, argptr );
+		vswprintf( m_buf, dimof(m_buf), format, argptr );
 		va_end( argptr );
 	}
 

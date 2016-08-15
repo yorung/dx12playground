@@ -1,12 +1,3 @@
-ComPtr<ID3DBlob> afCompileShader(const char* name, const char* entryPoint, const char* target);
-
-#define SF_R32G32_FLOAT DXGI_FORMAT_R32G32_FLOAT
-#define SF_R32G32B32_FLOAT DXGI_FORMAT_R32G32B32_FLOAT
-#define SF_R32G32B32A32_FLOAT DXGI_FORMAT_R32G32B32A32_FLOAT
-#define SF_R8G8B8A8_UNORM DXGI_FORMAT_R8G8B8A8_UNORM
-#define SF_R32_UINT DXGI_FORMAT_R32_UINT
-#define SF_R8G8B8A8_UINT DXGI_FORMAT_R8G8B8A8_UINT
-
 typedef D3D12_INPUT_ELEMENT_DESC InputElement;
 
 class CInputElement : public InputElement {
@@ -22,9 +13,6 @@ public:
 	}
 };
 
-typedef unsigned short AFIndex;
-
-#define AFIndexTypeToDevice DXGI_FORMAT_R16_UINT
 typedef ComPtr<ID3D12Resource> IBOID;
 typedef ComPtr<ID3D12Resource> VBOID;
 typedef ComPtr<ID3D12Resource> UBOID;
@@ -69,11 +57,6 @@ public:
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology);
 ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLayout, int numSamplers, const SamplerType samplers[]);
 
-#define PrimitiveTopology D3D_PRIMITIVE_TOPOLOGY
-#define PT_TRIANGLESTRIP D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
-#define PT_TRIANGLELIST D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
-#define PT_LINELIST D3D_PRIMITIVE_TOPOLOGY_LINELIST
-
 void afDrawIndexed(PrimitiveTopology pt, int numIndices, int start = 0, int instanceCount = 1);
 void afDraw(PrimitiveTopology pt, int numVertices, int start = 0, int instanceCount = 1);
 
@@ -84,20 +67,10 @@ struct AFTexSubresourceData
 	uint32_t pitchSlice;
 };
 
-typedef DXGI_FORMAT AFDTFormat;
-#define AFDT_INVALID DXGI_FORMAT_UNKNOWN
-#define AFDT_R8G8B8A8_UNORM DXGI_FORMAT_R8G8B8A8_UNORM
-#define AFDT_R5G6B5_UINT DXGI_FORMAT_B5G6R5_UNORM
-#define AFDT_R32G32B32A32_FLOAT DXGI_FORMAT_R32G32B32A32_FLOAT
-#define AFDT_R16G16B16A16_FLOAT DXGI_FORMAT_R16G16B16A16_FLOAT
-#define AFDT_DEPTH DXGI_FORMAT_D24_UNORM_S8_UINT
-#define AFDT_DEPTH_STENCIL DXGI_FORMAT_D24_UNORM_S8_UINT
-#define AFDT_BC1_UNORM DXGI_FORMAT_BC1_UNORM
-#define AFDT_BC2_UNORM DXGI_FORMAT_BC2_UNORM
-#define AFDT_BC3_UNORM DXGI_FORMAT_BC3_UNORM
-
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image = nullptr, bool isRenderTargetOrDepthStencil = false);
 SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
+void afSetTextureName(SRVID tex, const char* name);
+
 void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
 void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
 #define afCreateDynamicTexture afCreateTexture2D

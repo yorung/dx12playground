@@ -145,19 +145,26 @@ static SRVID LoadDDSTexture(const char* name, TexDesc& texDesc)
 	}
 
 	SRVID srv = afCreateTexture2D(format, texDesc, mipCnt, &r[0]);
+	assert(srv);
 	free(img);
 	return srv;
 }
 
 SRVID afLoadTexture(const char* name, TexDesc& desc)
 {
+	desc = TexDesc();
 	size_t len = strlen(name);
-	if (len > 4 && !stricmp(name + len - 4, ".dds")) {
-		return LoadDDSTexture(name, desc);
-	} else {
-		desc = TexDesc();
-		return LoadTextureViaOS(name, desc.size);
+	SRVID tex;
+	if (len > 4 && !stricmp(name + len - 4, ".dds"))
+	{
+		tex = LoadDDSTexture(name, desc);
 	}
+	else
+	{
+		tex = LoadTextureViaOS(name, desc.size);
+	}
+	afSetTextureName(tex, name);
+	return tex;
 }
 
 IBOID afCreateQuadListIndexBuffer(int numQuads)

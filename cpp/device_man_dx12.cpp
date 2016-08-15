@@ -4,7 +4,6 @@
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3dcompiler.lib")
 
 DeviceManDX12 deviceMan;
 
@@ -19,7 +18,6 @@ DeviceManDX12::FrameResources::~FrameResources()
 
 DeviceManDX12::~DeviceManDX12()
 {
-	assert(!factory);
 	assert(!device);
 	assert(!commandQueue);
 	assert(!commandList);
@@ -50,7 +48,6 @@ void DeviceManDX12::Destroy()
 	rtvHeap.Reset();
 	depthStencil.Reset();
 	dsvHeap.Reset();
-	factory.Reset();
 	fence.Reset();
 	fenceValue = 1;
 	frameIndex = 0;
@@ -253,6 +250,7 @@ void DeviceManDX12::Create(HWND hWnd)
 		debug->EnableDebugLayer();
 	}
 #endif
+	ComPtr<IDXGIFactory4> factory;
 	if (S_OK != CreateDXGIFactory1(IID_PPV_ARGS(&factory))) {
 		Destroy();
 		return;
@@ -320,7 +318,6 @@ void DeviceManDX12::Create(HWND hWnd)
 		device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&res.srvHeap));
 
 		res.constantBuffer = afCreateUBO(maxConstantBufferBlocks * 0x100);
-		res.constantBuffer->SetName(L"DeviceMan constant buffer");
 		D3D12_RANGE readRange = {};
 		HRESULT hr = res.constantBuffer->Map(0, &readRange, (void**)&res.mappedConstantBuffer);
 		assert(hr == S_OK);

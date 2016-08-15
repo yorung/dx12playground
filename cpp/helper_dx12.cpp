@@ -6,25 +6,6 @@ static const D3D12_HEAP_PROPERTIES defaultHeapProperties = { D3D12_HEAP_TYPE_DEF
 static const D3D12_HEAP_PROPERTIES uploadHeapProperties = { D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 static const float clearColor[] = { 0.0f, 0.2f, 0.3f, 1.0f };
 
-ComPtr<ID3DBlob> afCompileShader(const char* name, const char* entryPoint, const char* target)
-{
-	char path[MAX_PATH];
-	sprintf_s(path, sizeof(path), "hlsl/%s.hlsl", name);
-#ifdef _DEBUG
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#endif
-	ComPtr<ID3DBlob> blob, err;
-	WCHAR wname[MAX_PATH];
-	MultiByteToWideChar(CP_ACP, 0, path, -1, wname, dimof(wname));
-	HRESULT hr = D3DCompileFromFile(wname, nullptr, nullptr, entryPoint, target, flags, 0, &blob, &err);
-	if (err) {
-		MessageBoxA(nullptr, (const char*)err->GetBufferPointer(), name, MB_OK | MB_ICONERROR);
-	}
-	return blob;
-}
-
 void afSetPipeline(ComPtr<ID3D12PipelineState> ps, ComPtr<ID3D12RootSignature> rs)
 {
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
@@ -112,6 +93,7 @@ VBOID afCreateVertexBuffer(int size, const void* buf)
 		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, buf);
 		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
 		deviceMan.AddIntermediateCommandlistDependentResource(intermediateBuffer);
+		deviceMan.AddIntermediateCommandlistDependentResource(o);
 	}
 	return o;
 }
@@ -128,6 +110,7 @@ IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi)
 		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, indi);
 		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
 		deviceMan.AddIntermediateCommandlistDependentResource(intermediateBuffer);
+		deviceMan.AddIntermediateCommandlistDependentResource(o);
 	}
 	return o;
 }
@@ -169,6 +152,7 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 			}
 			uploadBuf->Unmap(0, nullptr);
 		}
+		uploadBuf->SetName(__FUNCTIONW__ L" intermediate buffer");
 		D3D12_TEXTURE_COPY_LOCATION uploadBufLocation = { uploadBuf.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, footprint };
 		D3D12_TEXTURE_COPY_LOCATION nativeBufLocation = { id.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, i };
 		ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
@@ -181,6 +165,8 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 
 		deviceMan.AddIntermediateCommandlistDependentResource(uploadBuf);
 	}
+
+	deviceMan.AddIntermediateCommandlistDependentResource(id);
 }
 
 void afWriteTexture(SRVID id, const TexDesc& desc, const void* buf)
@@ -192,6 +178,14 @@ void afWriteTexture(SRVID id, const TexDesc& desc, const void* buf)
 	assert(destDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM);
 	AFTexSubresourceData data = { buf, (uint32_t)desc.size.x * 4, 0 };
 	afWriteTexture(id, desc, 1, &data);
+}
+
+void afSetTextureName(SRVID tex, const char* name)
+{
+	if (tex)
+	{
+		tex->SetName(SWPrintf(L"%S", name));
+	}
 }
 
 SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image, bool isRenderTargetOrDepthStencil)
@@ -270,8 +264,8 @@ void afDraw(PrimitiveTopology pt, int numVertices, int start, int instanceCount)
 
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology)
 {
-	ComPtr<ID3DBlob> vertexShader = afCompileShader(shaderName, "VSMain", "vs_5_0");
-	ComPtr<ID3DBlob> pixelShader = afCompileShader(shaderName, "PSMain", "ps_5_0");
+	ComPtr<ID3DBlob> vertexShader = afCompileHLSL(shaderName, "VSMain", "vs_5_0");
+	ComPtr<ID3DBlob> pixelShader = afCompileHLSL(shaderName, "PSMain", "ps_5_0");
 
 	static D3D12_RENDER_TARGET_BLEND_DESC solid = {
 		FALSE, FALSE,
@@ -481,7 +475,6 @@ void AFDynamicQuadListVertexBuffer::Create(const InputElement*, int, int vertexS
 	stride = vertexSize_;
 	vertexBufferSize = nQuad * vertexSize_ * 4;
 	ibo = afCreateQuadListIndexBuffer(nQuad);
-	ibo->SetName(L"index buffer for quad list");
 }
 
 void AFDynamicQuadListVertexBuffer::Write(const void* buf, int size)
@@ -501,9 +494,8 @@ void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthSt
 {
 	texSize = size;
 	renderTarget = afCreateDynamicTexture(colorFormat, size, nullptr, true);
-//	D3D12_RESOURCE_BARRIER barrier = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ renderTarget.Get(), 0, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET } };
+	afSetTextureName(renderTarget, __FUNCTION__);
 	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
-//	commandList->ResourceBarrier(1, &barrier);
 	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
 	deviceMan.GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();

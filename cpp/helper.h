@@ -11,7 +11,6 @@ const char* StrMessageBox(const char* txt, const char* type);
 void ClearMenu();
 void AddMenu(const char *name, const char *cmd);
 void PostCommand(const char* cmdString);
-bool LoadImageViaGdiPlus(const char* name, IVec2& size, std::vector<uint32_t>& col);
 
 template <class T> inline void SAFE_DELETE(T& p)
 {

@@ -16,7 +16,6 @@ class DeviceManDX12
 		struct { char buf[256]; } *mappedConstantBuffer = nullptr;
 		UINT64 fenceValueToGuard = 0;
 	} frameResources[numFrameBuffers];
-	ComPtr<IDXGIFactory4> factory;
 	ComPtr<ID3D12Device> device;
 	ComPtr<IDXGISwapChain3> swapChain;
 	ComPtr<ID3D12Resource> depthStencil;

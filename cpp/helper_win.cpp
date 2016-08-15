@@ -123,7 +123,7 @@ namespace Gdiplus {
 #include <gdiplus.h>
 #pragma comment(lib, "gdiplus.lib")
 
-bool LoadImageViaGdiPlus(const char* name, IVec2& size, std::vector<uint32_t>& col)
+static bool LoadImageViaGdiPlus(const char* name, IVec2& size, std::vector<uint32_t>& col)
 {
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
@@ -246,5 +246,27 @@ void MakeFontBitmap(const char* fontName, const CharSignature& sig, DIB& dib, Ch
 	cache.step = (float)met.gmCellIncX;
 	cache.distDelta = Vec2((float)met.gmptGlyphOrigin.x, (float)-met.gmptGlyphOrigin.y);
 }
+#endif
 
+#if defined(__d3d11_h__) || defined(__d3d12_h__)
+#include <D3Dcompiler.h>
+#pragma comment(lib, "d3dcompiler.lib")
+ComPtr<ID3DBlob> afCompileHLSL(const char* name, const char* entryPoint, const char* target)
+{
+	char path[MAX_PATH];
+	sprintf_s(path, sizeof(path), "hlsl/%s.hlsl", name);
+#ifdef _DEBUG
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#endif
+	ComPtr<ID3DBlob> blob, err;
+	WCHAR wname[MAX_PATH];
+	MultiByteToWideChar(CP_ACP, 0, path, -1, wname, dimof(wname));
+	HRESULT hr = D3DCompileFromFile(wname, nullptr, nullptr, entryPoint, target, flags, 0, &blob, &err);
+	if (err) {
+		MessageBoxA(nullptr, (const char*)err->GetBufferPointer(), name, MB_OK | MB_ICONERROR);
+	}
+	return blob;
+}
 #endif
