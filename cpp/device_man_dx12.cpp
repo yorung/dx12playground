@@ -223,12 +223,12 @@ void DeviceManDX12::AssignCBVAndConstantBuffer(int descriptorHeapIndex, const vo
 	AssignCBV(descriptorHeapIndex, top, size);
 }
 
-void DeviceManDX12::SetAssignedDescriptorHeap(int descriptorHeapIndex)
+void DeviceManDX12::SetAssignedDescriptorHeap(int descriptorHeapIndex, int rootParameterIndex)
 {
 	FrameResources& res = frameResources[frameIndex];
 	D3D12_GPU_DESCRIPTOR_HANDLE addr = res.srvHeap->GetGPUDescriptorHandleForHeapStart();
 	addr.ptr += descriptorHeapIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	commandList->SetGraphicsRootDescriptorTable(0, addr);
+	commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, addr);
 }
 
 void DeviceManDX12::AddIntermediateCommandlistDependentResource(ComPtr<ID3D12Resource> intermediateResource)
@@ -348,6 +348,12 @@ void DeviceManDX12::Create(HWND hWnd)
 		return;
 	}
 	BeginScene();
+}
+
+void afBindBufferToRoot(const void* buf, int size, int rootParameterIndex)
+{
+	int cbTop = deviceMan.AssignConstantBuffer(buf, size);
+	deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(rootParameterIndex, deviceMan.GetConstantBufferGPUAddress(cbTop));
 }
 
 #endif

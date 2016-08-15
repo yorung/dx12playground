@@ -38,8 +38,7 @@ void Triangle::Draw()
 	Mat matView = lookatLH(Vec3(0, 0, -1), Vec3(0, 0, 0), Vec3(0, 1, 0));
 	for (int i = 0; i < dimof(matWorld); i++) {
 		Mat m = matWorld[i] * matView * matProj;
-		int cbTop = deviceMan.AssignConstantBuffer(&m, sizeof(m));
-		deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(0, deviceMan.GetConstantBufferGPUAddress(cbTop));
+		afBindBufferToRoot(&m, sizeof(m), 0);
 		afDrawIndexed(PT_TRIANGLELIST, 3);
 	}
 }

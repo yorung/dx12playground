@@ -32,28 +32,6 @@ IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi);
 ComPtr<ID3D12Resource> afCreateDynamicVertexBuffer(int size, const void* buf = nullptr);
 UBOID afCreateUBO(int size);
 
-class CDescriptorCBV : public D3D12_DESCRIPTOR_RANGE {
-public:
-	CDescriptorCBV(int shaderRegister) {
-		RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-		NumDescriptors = 1;
-		BaseShaderRegister = shaderRegister;
-		RegisterSpace = 0;
-		OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	}
-};
-
-class CDescriptorSRV : public D3D12_DESCRIPTOR_RANGE {
-public:
-	CDescriptorSRV(int shaderRegister) {
-		RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		NumDescriptors = 1;
-		BaseShaderRegister = shaderRegister;
-		RegisterSpace = 0;
-		OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	}
-};
-
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature> rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology);
 ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLayout, int numSamplers, const SamplerType samplers[]);
 
@@ -175,7 +153,8 @@ VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers
 void afBindVAO(const VAOID& vao);
 inline void afSafeDeleteVAO(VAOID& p) { p.reset(); }
 
+void afBindBufferToRoot(const void* buf, int size, int rootParameterIndex);
 void afBindCbv0(const void* buf, int size);
-void afBindSrv0(SRVID srv);
+void afBindSrv0(SRVID srv, int rootParameterIndex = 0);
 void afBindCbv0Srv0(const void* buf, int size, SRVID srv);
 void afBindCbvsSrv0(AFCbvBindToken cbvs[], int nCbvs, SRVID srv);

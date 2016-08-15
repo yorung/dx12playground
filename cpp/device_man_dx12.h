@@ -43,7 +43,7 @@ public:
 	void AssignCBV(int descriptorHeapIndex, int constantBufferTop, int size);
 	void AssignCBV(int descriptorHeapIndex, ComPtr<ID3D12Resource> ubo);
 	void AssignCBVAndConstantBuffer(int descriptorHeapIndex, const void* buf, int size);
-	void SetAssignedDescriptorHeap(int index);
+	void SetAssignedDescriptorHeap(int index, int rootParameterIndex);
 	ComPtr<ID3D12Device> GetDevice() { return device; }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList.Get(); }
 	void AddIntermediateCommandlistDependentResource(ComPtr<ID3D12Resource> intermediateResource);
