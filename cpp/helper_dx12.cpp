@@ -218,26 +218,11 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image, bool 
 
 SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[])
 {
-	bool isDepthStencil = format == AFDT_DEPTH || format == AFDT_DEPTH_STENCIL;
-	D3D12_RESOURCE_DESC textureDesc = {};
-	textureDesc.MipLevels = mipCount;
-	textureDesc.Format = format;
-	textureDesc.Width = desc.size.x;
-	textureDesc.Height = desc.size.y;
-	textureDesc.Flags = isDepthStencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_NONE;
-	textureDesc.DepthOrArraySize = desc.arraySize;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-
-	SRVID id;
-	D3D12_CLEAR_VALUE clearValue = { format };
-	if (isDepthStencil) {
-		clearValue.DepthStencil.Depth = 1.0f;
-	}
-	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, isDepthStencil ? &clearValue : nullptr, IID_PPV_ARGS(&id));
-	afWriteTexture(id, desc, mipCount, datas);
-	return id;
+	D3D12_RESOURCE_DESC resourceDesc = { D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, (UINT64)desc.size.x, (UINT)desc.size.y, (UINT16)desc.arraySize, (UINT16)mipCount, format, {1, 0} };
+	SRVID tex;
+	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, nullptr, IID_PPV_ARGS(&tex));
+	afWriteTexture(tex, desc, mipCount, datas);
+	return tex;
 }
 
 void afDrawIndexed(PrimitiveTopology pt, int numIndices, int start, int instanceCount)
