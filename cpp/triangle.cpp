@@ -49,7 +49,6 @@ void Triangle::Create()
 	ibo = afCreateIndexBuffer(indices, _countof(indices));
 	vbo->SetName(L"Triangle vertex bugger");
 	ibo->SetName(L"Triangle index bugger");
-	rootSignature = afCreateRootSignature(AFDL_CBV0, 0, nullptr);
 	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 }
 

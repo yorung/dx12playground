@@ -13,6 +13,9 @@ struct VsOutput {
 	float3 col : COLOR;
 };
 
+#define RSDEF "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), CBV(b0)"
+
+[RootSignature(RSDEF)]
 VsOutput VSMain(VsInput inp)
 {
 	VsOutput outp;
@@ -21,6 +24,7 @@ VsOutput VSMain(VsInput inp)
 	return outp;
 }
 
+[RootSignature(RSDEF)]
 float4 PSMain(VsOutput inp) : SV_TARGET
 {
 	return float4(inp.col, 0.5);
