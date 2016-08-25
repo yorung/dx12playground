@@ -42,7 +42,7 @@ void App::Init()
 	rt.Init(scrSize, AFDT_R8G8B8A8_UNORM, AFDT_DEPTH_STENCIL);
 
 	SamplerType sampler = AFST_POINT_CLAMP;
-	rsPostProcess.Create(AFDL_SRV0, "vivid", 0, nullptr, BM_NONE, DSM_DISABLE, CM_DISABLE, 1, &sampler);
+	rsPostProcess.Create("vivid", 0, nullptr, BM_NONE, DSM_DISABLE, CM_DISABLE, 1, &sampler);
 }
 
 void App::Destroy()

@@ -239,6 +239,7 @@ void afDraw(PrimitiveTopology pt, int numVertices, int start, int instanceCount)
 	list->DrawInstanced(numVertices, instanceCount, start, 0);
 }
 
+#include <D3Dcompiler.h>
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature>& rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology)
 {
 	ComPtr<ID3DBlob> vertexShader = afCompileHLSL(shaderName, "VSMain", "vs_5_0");
@@ -312,99 +313,6 @@ public:
 		OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 	}
 };
-
-ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLayout, int numSamplers, const SamplerType samplers[])
-{
-	ComPtr<ID3D12RootSignature> rs;
-	ComPtr<ID3DBlob> signature;
-	ComPtr<ID3DBlob> error;
-
-	D3D12_STATIC_SAMPLER_DESC staticSamplers[16] = {};
-	assert(numSamplers < (int)dimof(staticSamplers));
-	for (int i = 0; i < numSamplers; i++) {
-		D3D12_STATIC_SAMPLER_DESC& desc = staticSamplers[i];
-		switch (samplers[i] >> 1) {
-		case 2:	// mipmap
-			desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-			break;
-		case 1:	// linear
-			desc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-			break;
-		case 0:	// point
-			desc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-			break;
-		}
-		desc.AddressU = desc.AddressV = (samplers[i] & 0x01) ? D3D12_TEXTURE_ADDRESS_MODE_CLAMP : D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		desc.MipLODBias = 0;
-		desc.MaxAnisotropy = 1;
-		desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-		desc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-		desc.MinLOD = 0;
-		desc.MaxLOD = D3D12_FLOAT32_MAX;
-		desc.ShaderRegister = i;
-		desc.RegisterSpace = 0;
-		desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	}
-
-	UINT numRootParameters = 0;
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
-	static D3D12_DESCRIPTOR_RANGE descriptors[] =
-	{
-		CDescriptorSRV(0),
-	};
-	switch (descriptorLayout) {
-	case AFDL_NONE:
-		numRootParameters = 0;
-		break;
-	case AFDL_CBV0:
-		{
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			numRootParameters = 1;
-			break;
-		}
-	case AFDL_CBV0_SRV0:
-		{
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
-			rootParameters[1].DescriptorTable.pDescriptorRanges = descriptors;
-			numRootParameters = 2;
-			break;
-		}
-	case AFDL_SRV0:
-		{
-			rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
-			rootParameters[0].DescriptorTable.pDescriptorRanges = descriptors;
-			numRootParameters = 1;
-			break;
-		}
-	case AFDL_CBV012_SRV0:
-		{
-			for (int i = 0; i < 3; i++) {
-				rootParameters[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-				rootParameters[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-				rootParameters[i].Descriptor.ShaderRegister = i;
-			}
-			rootParameters[3].DescriptorTable.NumDescriptorRanges = _countof(descriptors);
-			rootParameters[3].DescriptorTable.pDescriptorRanges = descriptors;
-			numRootParameters = 4;
-			break;
-		}
-	}
-
-	D3D12_ROOT_SIGNATURE_DESC rsDesc = { numRootParameters, rootParameters, (UINT)numSamplers, staticSamplers, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
-	HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
-	assert(hr == S_OK);
-	hr = deviceMan.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rs));
-	assert(hr == S_OK);
-	return rs;
-}
 
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[])
 {

@@ -33,7 +33,6 @@ ComPtr<ID3D12Resource> afCreateDynamicVertexBuffer(int size, const void* buf = n
 UBOID afCreateUBO(int size);
 
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature>& rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology);
-ComPtr<ID3D12RootSignature> afCreateRootSignature(DescriptorLayout descriptorLayout, int numSamplers, const SamplerType samplers[]);
 
 void afDrawIndexed(PrimitiveTopology pt, int numIndices, int start = 0, int instanceCount = 1);
 void afDraw(PrimitiveTopology pt, int numVertices, int start = 0, int instanceCount = 1);
@@ -70,9 +69,8 @@ class AFRenderStates {
 	ComPtr<ID3D12PipelineState> pipelineState;
 public:
 	bool IsReady() { return !!pipelineState; }
-	void Create(DescriptorLayout descriptorLayout, const char* shaderName, int numInputElements, const InputElement* inputElements, BlendMode blendMode_, DepthStencilMode depthStencilMode_, CullMode cullMode_, int numSamplerTypes_ = 0, const SamplerType samplerTypes_[] = nullptr, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE)
+	void Create(const char* shaderName, int numInputElements, const InputElement* inputElements, BlendMode blendMode_, DepthStencilMode depthStencilMode_, CullMode cullMode_, int numSamplerTypes_ = 0, const SamplerType samplerTypes_[] = nullptr, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE)
 	{
-		rootSignature = afCreateRootSignature(descriptorLayout, numSamplerTypes_, samplerTypes_);
 		pipelineState = afCreatePSO(shaderName, inputElements, numInputElements, blendMode_, depthStencilMode_, cullMode_, rootSignature, primitiveTopology);
 	}
 	void Apply() const
@@ -157,8 +155,3 @@ void afBindBufferToBindingPoint(const void* buf, int size, int rootParameterInde
 void afBindBufferToBindingPoint(UBOID ubo, int rootParameterIndex);
 void afBindTextureToBindingPoint(SRVID srv, int rootParameterIndex);
 #define afBindCubeMapToBindingPoint afBindTextureToBindingPoint
-
-constexpr int afGetTRegisterBindingPoint(DescriptorLayout layout)
-{
-	return (layout == AFDL_CBV0_SRV0) ? 1 : (layout == AFDL_CBV012_SRV0) ? 3 : 0;
-}
