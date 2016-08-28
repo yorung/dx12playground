@@ -116,6 +116,43 @@ const char* StrMessageBox(const char* txt, const char* type)
 	return IdToStr(MessageBoxA(GetActiveWindow(), txt, "MessageBox", StrToType(type)));
 }
 
+void ShowLastWinAPIError()
+{
+	wchar_t* msg;
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0, nullptr);
+	MessageBox(GetActiveWindow(), msg, L"", MB_OK);
+	LocalFree(msg);
+}
+
+bool ProcessWindowMessage(HWND hWnd, HACCEL hAccelTable)
+{
+	MSG msg;
+	for (;;)
+	{
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT)
+			{
+				return false;
+			}
+			if (!TranslateAccelerator(hWnd, hAccelTable, &msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+
+		bool active = !IsIconic(hWnd) && GetForegroundWindow() == hWnd;
+		if (!active)
+		{
+			WaitMessage();
+			continue;
+		}
+
+		return true;
+	}
+}
+
 namespace Gdiplus {
 	using std::min;
 	using std::max;

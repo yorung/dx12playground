@@ -164,6 +164,7 @@
     <ClInclude Include="..\cpp\helper.h" />
     <ClInclude Include="..\cpp\helper_dx12.h" />
     <ClInclude Include="..\cpp\helper_text.h" />
+    <ClInclude Include="..\cpp\helper_win.h" />
     <ClInclude Include="..\cpp\matrix_man.h" />
     <ClInclude Include="..\cpp\sky_man.h" />
     <ClInclude Include="..\cpp\stdafx.h" />

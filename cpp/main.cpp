@@ -10,38 +10,7 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 HACCEL hAccelTable;
 
-static void ShowLastError()
-{
-	wchar_t* msg;
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0, nullptr);
-	MessageBox(hWnd, msg, L"", MB_OK);
-	LocalFree(msg);
-}
 
-// WindowMessage
-static BOOL ProcessWindowMessage(){
-	MSG msg;
-	for (;;){
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
-			if (msg.message == WM_QUIT){
-				return FALSE;
-			}
-			if (!TranslateAccelerator(hWnd, hAccelTable, &msg)) {
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
-
-		BOOL active = !IsIconic(hWnd) && GetForegroundWindow() == hWnd;
-
-		if (!active){
-			WaitMessage();
-			continue;
-		}
-
-		return TRUE;
-	}
-}
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -80,16 +49,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE,
 	int lastH = 0;
 
 	// Main message loop:
-	for (;;) {
-		if (!ProcessWindowMessage()) {
-			break;
-		}
-
+	while (ProcessWindowMessage(hWnd, hAccelTable))
+	{
 		RECT rc;
 		GetClientRect(hWnd, &rc);
 		int w = rc.right - rc.left;
 		int h = rc.bottom - rc.top;
-		if (w != lastW || h != lastH) {
+		if (w != lastW || h != lastH)
+		{
 			lastW = w;
 			lastH = h;
 			app.Destroy();

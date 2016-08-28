@@ -30,3 +30,6 @@ typedef DXGI_FORMAT AFDTFormat;
 #define AFDT_BC3_UNORM DXGI_FORMAT_BC3_UNORM
 
 #endif
+
+void ShowLastWinAPIError();
+bool ProcessWindowMessage(HWND hWnd, HACCEL hAccelTable);
