@@ -264,7 +264,8 @@ ComPtr<ID3DBlob> afCompileHLSL(const char* name, const char* entryPoint, const c
 	WCHAR wname[MAX_PATH];
 	MultiByteToWideChar(CP_ACP, 0, path, -1, wname, dimof(wname));
 	HRESULT hr = D3DCompileFromFile(wname, nullptr, nullptr, entryPoint, target, flags, 0, &blob, &err);
-	if (err) {
+	if (err)
+	{
 		MessageBoxA(nullptr, (const char*)err->GetBufferPointer(), name, MB_OK | MB_ICONERROR);
 	}
 	return blob;
