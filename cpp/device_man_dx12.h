@@ -36,6 +36,7 @@ public:
 	void Flush();
 	void SetRenderTarget();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() { return dsvHeap->GetCPUDescriptorHandleForHeapStart(); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() { return rtvHeap->GetCPUDescriptorHandleForHeapStart(); }
 	int AssignDescriptorHeap(int numRequired);
 	void AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> res);
 	int AssignConstantBuffer(const void* buf, int size);

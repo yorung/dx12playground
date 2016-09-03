@@ -401,21 +401,17 @@ void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthSt
 	deviceMan.AddIntermediateCommandlistDependentResource(renderTarget);
 	afSetTextureName(renderTarget, __FUNCTION__);
 	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
-	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
-	deviceMan.GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-	deviceMan.GetDevice()->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
 }
 
 void AFRenderTarget::Destroy()
 {
-	rtvHeap.Reset();
 	renderTarget.Reset();
 }
 
 void AFRenderTarget::BeginRenderToThis()
 {
-	if (asDefault) {
+	if (asDefault)
+	{
 		deviceMan.SetRenderTarget();
 		return;
 	}
@@ -427,7 +423,8 @@ void AFRenderTarget::BeginRenderToThis()
 	commandList->RSSetScissorRects(1, &rc);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = deviceMan.GetDepthStencilView();
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = deviceMan.GetRenderTargetView();
+	deviceMan.GetDevice()->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
 
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);

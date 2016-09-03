@@ -69,7 +69,10 @@ void DeviceManDX12::SetRenderTarget()
 
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-	rtvHandle.ptr += frameIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	FrameResources& res = frameResources[frameIndex];
+	device->CreateRenderTargetView(res.renderTarget.Get(), nullptr, rtvHandle);
+
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	const float clearColor[] = { 0.0f, 0.2f, 0.3f, 1.0f };
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
@@ -270,7 +273,7 @@ void DeviceManDX12::Create(HWND hWnd)
 		return;
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, numFrameBuffers };
+	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
 	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	for (int i = 0; i < numFrameBuffers; i++) {
 		FrameResources& res = frameResources[i];
@@ -278,10 +281,6 @@ void DeviceManDX12::Create(HWND hWnd)
 			Destroy();
 			return;
 		}
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-		rtvHandle.ptr += i * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-		device->CreateRenderTargetView(res.renderTarget.Get(), nullptr, rtvHandle);
-
 		device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&res.commandAllocator));
 
 		const D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxSrvs, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE };
