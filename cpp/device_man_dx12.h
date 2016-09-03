@@ -19,6 +19,7 @@ class DeviceManDX12
 	ComPtr<ID3D12Device> device;
 	ComPtr<IDXGISwapChain3> swapChain;
 	ComPtr<ID3D12Resource> depthStencil;
+	ComPtr<ID3D12DescriptorHeap> rtvHeap, dsvHeap;
 	ComPtr<ID3D12CommandQueue> commandQueue;
 	ComPtr<ID3D12GraphicsCommandList> commandList;
 	ComPtr<ID3D12Fence> fence;
@@ -34,7 +35,7 @@ public:
 	void Present();
 	void Flush();
 	void SetRenderTarget();
-	ComPtr<ID3D12Resource> GetDepthStencil() { return depthStencil; }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() { return dsvHeap->GetCPUDescriptorHandleForHeapStart(); }
 	int AssignDescriptorHeap(int numRequired);
 	void AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> res);
 	int AssignConstantBuffer(const void* buf, int size);
