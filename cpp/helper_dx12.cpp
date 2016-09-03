@@ -399,34 +399,36 @@ void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthSt
 	texSize = size;
 	renderTarget = afCreateDynamicTexture(colorFormat, size, nullptr, true);
 	afSetTextureName(renderTarget, __FUNCTION__);
-	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
-	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
-	deviceMan.GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-	deviceMan.GetDevice()->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
 }
 
 void AFRenderTarget::Destroy()
 {
-	rtvHeap.Reset();
 	renderTarget.Reset();
 }
 
 void AFRenderTarget::BeginRenderToThis()
 {
-	if (asDefault) {
+	if (asDefault)
+	{
 		deviceMan.SetRenderTarget();
 		return;
 	}
-
 	D3D12_VIEWPORT vp = { 0.f, 0.f, (float)texSize.x, (float)texSize.y, 0.f, 1.f };
 	D3D12_RECT rc = { 0, 0, (LONG)texSize.x, (LONG)texSize.y };
 	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
 	commandList->RSSetViewports(1, &vp);
 	commandList->RSSetScissorRects(1, &rc);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = deviceMan.GetDepthStencilView();
+	ComPtr<ID3D12DescriptorHeap> dsvHeap, rtvHeap;
+	const D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
+	deviceMan.GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	deviceMan.GetDevice()->CreateDepthStencilView(deviceMan.GetDepthStencil().Get(), nullptr, dsvHandle);
+
+	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
+	deviceMan.GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+	deviceMan.GetDevice()->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
 
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);

@@ -23,9 +23,7 @@ DeviceManDX12::~DeviceManDX12()
 	assert(!commandList);
 	assert(!fence);
 	assert(!swapChain);
-	assert(!rtvHeap);
 	assert(!depthStencil);
-	assert(!dsvHeap);
 }
 
 void DeviceManDX12::Destroy()
@@ -45,9 +43,7 @@ void DeviceManDX12::Destroy()
 		res.constantBuffer.Reset();
 		res.fenceValueToGuard = 0;
 	}
-	rtvHeap.Reset();
 	depthStencil.Reset();
-	dsvHeap.Reset();
 	fence.Reset();
 	fenceValue = 1;
 	frameIndex = 0;
@@ -67,9 +63,18 @@ void DeviceManDX12::SetRenderTarget()
 	commandList->RSSetViewports(1, &vp);
 	commandList->RSSetScissorRects(1, &rc);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	ComPtr<ID3D12DescriptorHeap> rtvHeap, dsvHeap;
+	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
+	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
+	FrameResources& res = frameResources[frameIndex];
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-	rtvHandle.ptr += frameIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	device->CreateRenderTargetView(res.renderTarget.Get(), nullptr, rtvHandle);
+
+	const D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
+	device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	device->CreateDepthStencilView(depthStencil.Get(), nullptr, dsvHandle);
+
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	const float clearColor[] = { 0.0f, 0.2f, 0.3f, 1.0f };
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
@@ -261,27 +266,25 @@ void DeviceManDX12::Create(HWND hWnd)
 	sd.Windowed = TRUE;
 
 	ComPtr<IDXGISwapChain> sc;
-	if (S_OK != factory->CreateSwapChain(commandQueue.Get(), &sd, &sc)) {
+	if (S_OK != factory->CreateSwapChain(commandQueue.Get(), &sd, &sc))
+	{
 		Destroy();
 		return;
 	}
-	if (S_OK != sc.As(&swapChain)) {
+	if (S_OK != sc.As(&swapChain))
+	{
 		Destroy();
 		return;
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, numFrameBuffers };
-	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
-	for (int i = 0; i < numFrameBuffers; i++) {
+	for (int i = 0; i < numFrameBuffers; i++)
+	{
 		FrameResources& res = frameResources[i];
-		if (S_OK != swapChain->GetBuffer(i, IID_PPV_ARGS(&res.renderTarget))) {
+		if (S_OK != swapChain->GetBuffer(i, IID_PPV_ARGS(&res.renderTarget)))
+		{
 			Destroy();
 			return;
 		}
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-		rtvHandle.ptr += i * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-		device->CreateRenderTargetView(res.renderTarget.Get(), nullptr, rtvHandle);
-
 		device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&res.commandAllocator));
 
 		const D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxSrvs, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE };
@@ -297,16 +300,12 @@ void DeviceManDX12::Create(HWND hWnd)
 	IVec2 size = { (int)sd.BufferDesc.Width, (int)sd.BufferDesc.Height };
 	depthStencil = afCreateTexture2D(AFDT_DEPTH_STENCIL, size, nullptr, true);
 
-	const D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
-	device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
-	device->CreateDepthStencilView(depthStencil.Get(), nullptr, dsvHandle);
-
 	factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
 	device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameResources[0].commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList));
 	commandList->Close();
 
-	if (S_OK != device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence))) {
+	if (S_OK != device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))
+	{
 		Destroy();
 		return;
 	}
