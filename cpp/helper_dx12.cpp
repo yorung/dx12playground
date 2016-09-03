@@ -398,6 +398,7 @@ void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthSt
 {
 	texSize = size;
 	renderTarget = afCreateDynamicTexture(colorFormat, size, nullptr, true);
+	deviceMan.AddIntermediateCommandlistDependentResource(renderTarget);
 	afSetTextureName(renderTarget, __FUNCTION__);
 	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
 	const D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
