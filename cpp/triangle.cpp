@@ -47,8 +47,8 @@ void Triangle::Create()
 {
 	vbo = afCreateVertexBuffer(sizeof(Vertex) * 3, vertices);
 	ibo = afCreateIndexBuffer(indices, _countof(indices));
-	vbo->SetName(L"Triangle vertex bugger");
-	ibo->SetName(L"Triangle index bugger");
+	vbo->SetName(L"Triangle vertex buffer");
+	ibo->SetName(L"Triangle index buffer");
 	pipelineState = afCreatePSO("solid", elements, dimof(elements), BM_NONE, DSM_DEPTH_ENABLE, CM_DISABLE, rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 }
 
