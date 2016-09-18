@@ -4,8 +4,8 @@ cbuffer perFrame : register(b0)
 };
 
 struct VsInput {
-	float3 pos : POSITION;
-	float3 col : COLOR;
+	float3 pos : ATTR0;
+	float3 col : ATTR1;
 };
 
 struct VsOutput {

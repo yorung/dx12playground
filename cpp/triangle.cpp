@@ -2,9 +2,10 @@
 
 Triangle triangle;
 
-static InputElement elements[] = {
-	CInputElement("POSITION", SF_R32G32B32_FLOAT, 0),
-	CInputElement("COLOR", SF_R32G32B32_FLOAT, 12),
+static InputElement elements[] =
+{
+	{ "ATTR", 0, SF_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	{ "ATTR", 1, SF_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 };
 
 struct Vertex {
