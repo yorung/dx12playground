@@ -122,6 +122,7 @@ class AFRenderTarget
 {
 	IVec2 texSize;
 	ComPtr<ID3D12Resource> renderTarget;
+	D3D12_RESOURCE_STATES currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	bool asDefault = false;
 public:
 	~AFRenderTarget() { Destroy(); }
@@ -129,7 +130,7 @@ public:
 	void Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthStencilFormat = AFDT_INVALID);
 	void Destroy();
 	void BeginRenderToThis();
-	ComPtr<ID3D12Resource> GetTexture() { return renderTarget; }
+	ComPtr<ID3D12Resource> GetTexture();
 };
 
 class FakeVAO

@@ -4,7 +4,13 @@
 
 static const D3D12_HEAP_PROPERTIES defaultHeapProperties = { D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 static const D3D12_HEAP_PROPERTIES uploadHeapProperties = { D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
-static const float clearColor[] = { 0.0f, 0.2f, 0.3f, 1.0f };
+static const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+static const D3D12_RESOURCE_STATES TEXTURE_STATE = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+
+void afTransition(ID3D12GraphicsCommandList* cmd, ComPtr<ID3D12Resource> res, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to)
+{
+	cmd->ResourceBarrier(1, ToPtr<D3D12_RESOURCE_BARRIER>({ D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ res.Get(), 0, from, to } }));
+}
 
 void afSetPipeline(ComPtr<ID3D12PipelineState> ps, ComPtr<ID3D12RootSignature> rs)
 {
@@ -75,7 +81,8 @@ ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf)
 	AFBufferResource o;
 	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&o));
 	assert(hr == S_OK);
-	if (buf) {
+	if (buf)
+	{
 		afWriteBuffer(o, buf, size);
 	}
 	return o;
@@ -142,8 +149,8 @@ void afWriteTexture(SRVID tex, const TexDesc& desc, int mipCount, const AFTexSub
 	assert(ptr);
 	for (UINT i = 0; i < subResources; i++)
 	{
-		transitions1[i] = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ tex.Get(), i, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST } };
-		transitions2[i] = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ tex.Get(), i, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE } };
+		transitions1[i] = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ tex.Get(), i, TEXTURE_STATE, D3D12_RESOURCE_STATE_COPY_DEST } };
+		transitions2[i] = { D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,{ tex.Get(), i, D3D12_RESOURCE_STATE_COPY_DEST, TEXTURE_STATE } };
 	}
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
 	list->ResourceBarrier(subResources, transitions1);
@@ -417,6 +424,7 @@ void AFRenderTarget::InitForDefaultRenderTarget()
 void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthStencilFormat)
 {
 	texSize = size;
+	currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	renderTarget = afCreateDynamicTexture(colorFormat, size, nullptr, true);
 	deviceMan.AddIntermediateCommandlistDependentResource(renderTarget);
 	afSetTextureName(renderTarget, __FUNCTION__);
@@ -430,6 +438,13 @@ void AFRenderTarget::Destroy()
 
 void AFRenderTarget::BeginRenderToThis()
 {
+	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
+	if (currentState != D3D12_RESOURCE_STATE_RENDER_TARGET)
+	{
+		afTransition(commandList, renderTarget, currentState, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	}
+
 	if (asDefault)
 	{
 		deviceMan.SetRenderTarget();
@@ -438,7 +453,6 @@ void AFRenderTarget::BeginRenderToThis()
 
 	D3D12_VIEWPORT vp = { 0.f, 0.f, (float)texSize.x, (float)texSize.y, 0.f, 1.f };
 	D3D12_RECT rc = { 0, 0, (LONG)texSize.x, (LONG)texSize.y };
-	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
 	commandList->RSSetViewports(1, &vp);
 	commandList->RSSetScissorRects(1, &rc);
 
@@ -449,6 +463,18 @@ void AFRenderTarget::BeginRenderToThis()
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+}
+
+ComPtr<ID3D12Resource> AFRenderTarget::GetTexture()
+{
+	if (currentState != TEXTURE_STATE)
+	{
+		ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
+		afTransition(commandList, renderTarget, currentState, TEXTURE_STATE);
+		currentState = TEXTURE_STATE;
+	}
+
+	return renderTarget;
 }
 
 FakeVAO::FakeVAO(int numBuffers, AFBufferResource const vbos_[], const int strides_[], const UINT offsets_[], AFBufferResource ibo_)
