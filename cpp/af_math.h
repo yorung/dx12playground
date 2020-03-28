@@ -1,5 +1,6 @@
 //#define USE_DXMATH
 //#define USE_SIMPLE_MATH
+//#define USE_D3DX
 
 typedef float affloat;
 
@@ -36,6 +37,10 @@ struct Vec3
 	Vec3(const Vector3& v) : Vec3(v.x, v.y, v.z) {}
 	operator Vector3() const { return Vector3(x, y, z); }
 #endif
+#ifdef USE_D3DX
+	Vec3(const D3DXVECTOR3& v) : Vec3(v.x, v.y, v.z) {}
+	operator D3DXVECTOR3() const { return D3DXVECTOR3(x, y, z); }
+#endif
 	Vec3 operator+(const Vec3& r) const { return Vec3(x + r.x, y + r.y, z + r.z); }
 	Vec3 operator-(const Vec3& r) const { return Vec3(x - r.x, y - r.y, z - r.z); }
 	Vec3 operator*(const Vec3& r) const { return Vec3(x * r.x, y * r.y, z * r.z); }
@@ -66,6 +71,7 @@ struct IVec2
 	int x, y;
 	IVec2() : x(0), y(0) {}
 	IVec2(int X, int Y) : x(X), y(Y) {}
+	IVec2(Vec2 v) : x((int)v.x), y((int)v.y) {}
 	IVec2 operator+(const IVec2& r) const { return IVec2(x + r.x, y + r.y); }
 	IVec2 operator-(const IVec2& r) const { return IVec2(x - r.x, y - r.y); }
 	operator Vec2() const { return Vec2((float)x, (float)y); }
@@ -131,12 +137,12 @@ inline Vec2 frac(const Vec2& v)
 
 inline Vec2 floor(const Vec2& v)
 {
-	return Vec2(floor(v.x), floor(v.y));
+	return Vec2(std::floor(v.x), std::floor(v.y));
 }
 
 inline Vec2 ceil(const Vec2& v)
 {
-	return Vec2(ceil(v.x), ceil(v.y));
+	return Vec2(std::ceil(v.x), std::ceil(v.y));
 }
 
 inline Vec2 max(const Vec2& a, const Vec2& b) {
@@ -181,7 +187,7 @@ struct Quat
 	affloat w;
 	Quat() { *this = Quat(1, Vec3()); }
 	Quat(affloat W, const Vec3& V) : v(V), w(W) {}
-	Quat(const Vec3& axis, affloat angle) { w = std::cos(angle / 2); v = normalize(axis) * std::sin(angle / 2); }
+	Quat(const Vec3& axis, affloat angle) { w = std::cos(angle / 2.f); v = normalize(axis) * std::sin(angle / 2.f); }
 #ifdef USE_SIMPLE_MATH
 	Quat(const Quaternion& q) : Quat(q.w, Vec3(q.x, q.y, q.z)) {}
 	operator Quaternion() const { return Quaternion(v.x, v.y, v.z, w); }
@@ -264,6 +270,10 @@ struct Mat
 
 	Mat(const XMMATRIX& mtx) : Mat(Matrix(mtx)) {}
 	operator XMMATRIX() const { return Matrix(*this); }
+#endif
+#ifdef USE_D3DX
+	Mat(const D3DXMATRIX& mtx) { assert(sizeof(float) == sizeof(affloat)); memcpy(m, mtx.m, sizeof(m)); }
+	operator D3DXMATRIX() const { return D3DXMATRIX(_11, _12, _13, _14, _21, _22, _23, _24, _31, _32, _33, _34, _41, _42, _43, _44); }
 #endif
 	Vec3 GetRow(int i) const { return Vec3(m[i][0], m[i][1], m[i][2]); }
 	void SetRow(int i, const Vec3& v) { m[i][0] = v.x; m[i][1] = v.y; m[i][2] = v.z; }
@@ -393,23 +403,23 @@ inline Quat m2q(const Mat& m_)
 	return Quaternion::CreateFromRotationMatrix(m);
 #else
 
-	affloat x, y, z, w = std::sqrt(m._11 + m._22 + m._33 + 1) / 2;
+	affloat x, y, z, w = std::sqrt(m._11 + m._22 + m._33 + 1.f) / 2.f;
 	if (w > 0.5f) {							 // w is the largest
 		z = (m._12 - m._21) / (w * 4);
 		y = (m._31 - m._13) / (w * 4);
 		x = (m._23 - m._32) / (w * 4);
 	} else if (m._11 > m._22 && m._11 > m._33) { // x is the largest
-		x = std::sqrt((-m._11 + m._22 + m._33 - 1) / -4);
+		x = std::sqrt((-m._11 + m._22 + m._33 - 1.f) / -4.f);
 		y = (m._12 + m._21) / (x * 4);
 		z = (m._31 + m._13) / (x * 4);
 		w = (m._23 - m._32) / (x * 4);
 	} else if (m._22 > m._33) {					// y is the largest
-		y = std::sqrt((m._11 - m._22 + m._33 - 1) / -4);
+		y = std::sqrt((m._11 - m._22 + m._33 - 1.f) / -4.f);
 		x = (m._12 + m._21) / (y * 4);
 		w = (m._31 - m._13) / (y * 4);
 		z = (m._23 + m._32) / (y * 4);
 	} else {									// z is the largest
-		z = std::sqrt((m._11 + m._22 - m._33 - 1) / -4);
+		z = std::sqrt((m._11 + m._22 - m._33 - 1.f) / -4.f);
 		w = (m._12 - m._21) / (z * 4);
 		x = (m._31 + m._13) / (z * 4);
 		y = (m._23 + m._32) / (z * 4);
@@ -467,21 +477,7 @@ inline Mat fastInv(const Mat& mtx)
 	return r;
 }
 
-inline Mat perspectiveLH(affloat fov, affloat aspect, affloat n, affloat f)
-{
-	affloat cotHalfFov = 1 / std::tan(fov * 0.5f);
-	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, cotHalfFov, 0, 0,
-#ifdef GL_TRUE
-		0, 0, -(f + n) / (f - n), 1,
-		0, 0, (n * f) * 2 / (f - n), 0);
-#else
-		0, 0, f / (f - n), 1,
-		0, 0, -(n * f) / (f - n), 0);
-#endif
-	return proj;
-}
-
-#ifdef GL_TRUE
+#if GL_TRUE
 static const affloat NDC_SPACE_NEAR = 1;
 static const affloat NDC_SPACE_FAR = -1;
 #else
@@ -489,32 +485,40 @@ static const affloat NDC_SPACE_NEAR = 0;
 static const affloat NDC_SPACE_FAR = 1;
 #endif
 
+inline Mat perspectiveLH(affloat fov, affloat aspect, affloat n, affloat f)
+{
+	affloat cotHalfFov = 1 / std::tan(fov * 0.5f);
+#if VK_TRUE
+	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, -cotHalfFov, 0, 0, 0, 0, f / (f - n), 1, 0, 0, -(n * f) / (f - n), 0);
+#elif GL_TRUE
+	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, cotHalfFov, 0, 0, 0, 0, -(f + n) / (f - n), 1, 0, 0, (n * f) * 2 / (f - n), 0);
+#else
+	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, cotHalfFov, 0, 0, 0, 0, f / (f - n), 1, 0, 0, -(n * f) / (f - n), 0);
+#endif
+	return proj;
+}
+
 inline Mat perspectiveRH(affloat fov, affloat aspect, affloat n, affloat f)
 {
 	affloat cotHalfFov = 1 / std::tan(fov * 0.5f);
-	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, cotHalfFov, 0, 0,
-#ifdef GL_TRUE
-		0, 0, -(f + n) / (f - n), -1,
-		0, 0, -(n * f) * 2 / (f - n), 0);
+#if VK_TRUE
+	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, -cotHalfFov, 0, 0, 0, 0, f / (f - n), -1, 0, 0, (n * f) / (f - n), 0);
+#elif GL_TRUE
+	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, cotHalfFov, 0, 0, 0, 0, -(f + n) / (f - n), -1, 0, 0, -(n * f) * 2 / (f - n), 0);
 #else
-		0, 0, f / (f - n), -1,
-		0, 0, (n * f) / (f - n), 0);
+	Mat proj = Mat(cotHalfFov / aspect, 0, 0, 0, 0, cotHalfFov, 0, 0, 0, 0, f / (f - n), -1, 0, 0, (n * f) / (f - n), 0);
 #endif
 	return proj;
 }
 
 inline Mat ortho(affloat left, affloat right, affloat bottom, affloat top, affloat n, affloat f)
 {
-#ifdef GL_TRUE
-	Mat proj = Mat(2 / (right - left), 0, 0, 0,
-		0, 2 / (top - bottom), 0, 0,
-		0, 0, -2 / (f - n), 0,
-		(left + right) / (left - right), (bottom + top) / (bottom - top), (n + f) / (n - f), 1);
+#if VK_TRUE
+	Mat proj = Mat(2 / (right - left), 0, 0, 0, 0, 2 / (bottom - top), 0, 0, 0, 0, 1 / (f - n), 0, (left + right) / (left - right), (bottom + top) / (top - bottom), n / (n - f), 1);
+#elif GL_TRUE
+	Mat proj = Mat(2 / (right - left), 0, 0, 0, 0, 2 / (top - bottom), 0, 0, 0, 0, -2 / (f - n), 0, (left + right) / (left - right), (bottom + top) / (bottom - top), (n + f) / (n - f), 1);
 #else
-	Mat proj = Mat(2 / (right - left), 0, 0, 0,
-		0, 2 / (top - bottom), 0, 0,
-		0, 0, 1 / (f - n), 0,
-		(left + right) / (left - right), (bottom + top) / (bottom - top), n / (n - f), 1);
+	Mat proj = Mat(2 / (right - left), 0, 0, 0, 0, 2 / (top - bottom), 0, 0, 0, 0, 1 / (f - n), 0, (left + right) / (left - right), (bottom + top) / (bottom - top), n / (n - f), 1);
 #endif
 	return proj;
 }
@@ -540,7 +544,11 @@ inline Mat makeViewportMatrix(const Vec2& screenSize)
 	Mat vp;
 	Vec2 sz = screenSize / 2;
 	vp._11 = sz.x;
+#if VK_TRUE
+	vp._22 = sz.y;
+#else
 	vp._22 = -sz.y;
+#endif
 	vp._41 = sz.x;
 	vp._42 = sz.y;
 	return vp;
