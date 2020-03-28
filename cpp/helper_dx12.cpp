@@ -20,7 +20,7 @@ void afSetDescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap)
 	deviceMan.GetCommandList()->SetGraphicsRootDescriptorTable(0, heap->GetGPUDescriptorHandleForHeapStart());
 }
 
-void afSetVertexBuffer(VBOID id, int stride)
+void afSetVertexBuffer(AFBufferResource id, int stride)
 {
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
 	D3D12_RESOURCE_DESC desc = id->GetDesc();
@@ -28,7 +28,7 @@ void afSetVertexBuffer(VBOID id, int stride)
 	list->IASetVertexBuffers(0, 1, &vertexBufferView);
 }
 
-void afSetVertexBuffers(int numIds, VBOID ids[], int strides[])
+void afSetVertexBuffers(int numIds, AFBufferResource ids[], int strides[])
 {
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
 	D3D12_VERTEX_BUFFER_VIEW views[10];
@@ -42,7 +42,7 @@ void afSetVertexBuffers(int numIds, VBOID ids[], int strides[])
 	list->IASetVertexBuffers(0, numIds, views);
 }
 
-void afSetIndexBuffer(IBOID id)
+void afSetIndexBuffer(AFBufferResource id)
 {
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
 	D3D12_RESOURCE_DESC desc = id->GetDesc();
@@ -50,7 +50,7 @@ void afSetIndexBuffer(IBOID id)
 	list->IASetIndexBuffer(&indexBufferView);
 }
 
-void afWriteBuffer(const IBOID id, const void* buf, int size)
+void afWriteBuffer(const AFBufferResource id, const void* buf, int size)
 {
 #ifdef _DEBUG
 	D3D12_RESOURCE_DESC desc = id->GetDesc();
@@ -72,7 +72,7 @@ void afWriteBuffer(const IBOID id, const void* buf, int size)
 ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf)
 {
 	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN, { 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
-	UBOID o;
+	AFBufferResource o;
 	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&o));
 	assert(hr == S_OK);
 	if (buf) {
@@ -81,15 +81,15 @@ ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf)
 	return o;
 }
 
-VBOID afCreateDynamicVertexBuffer(int size, const void* buf)
+AFBufferResource afCreateDynamicVertexBuffer(int size, const void* buf)
 {
 	return afCreateBuffer(size, buf);
 }
 
-VBOID afCreateVertexBuffer(int size, const void* buf)
+AFBufferResource afCreateVertexBuffer(int size, const void* buf)
 {
 	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN,{ 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
-	VBOID o;
+	AFBufferResource o;
 	deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr, IID_PPV_ARGS(&o));
 	if (o)
 	{
@@ -101,13 +101,13 @@ VBOID afCreateVertexBuffer(int size, const void* buf)
 	return o;
 }
 
-IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi)
+AFBufferResource afCreateIndexBuffer(const AFIndex* indi, int numIndi)
 {
 	assert(indi);
 	int size = numIndi * sizeof(AFIndex);
 
 	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN,{ 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
-	IBOID o;
+	AFBufferResource o;
 	deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_INDEX_BUFFER, nullptr, IID_PPV_ARGS(&o));
 	if (o) {
 		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, indi);
@@ -118,7 +118,7 @@ IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi)
 	return o;
 }
 
-UBOID afCreateUBO(int size)
+AFBufferResource afCreateUBO(int size)
 {
 	return afCreateBuffer((size + 0xff) & ~0xff);
 }
@@ -388,7 +388,7 @@ void afBindTextureToBindingPoint(SRVID srv, int rootParameterIndex)
 
 void afSetVertexBufferFromSystemMemory(const void* buf, int size, int stride)
 {
-	VBOID vbo = afCreateDynamicVertexBuffer(size, buf);
+	AFBufferResource vbo = afCreateDynamicVertexBuffer(size, buf);
 	afSetVertexBuffer(vbo, stride);
 	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
 }
@@ -404,7 +404,7 @@ void AFDynamicQuadListVertexBuffer::Create(const InputElement*, int, int vertexS
 void AFDynamicQuadListVertexBuffer::Write(const void* buf, int size)
 {
 	assert(size <= vertexBufferSize);
-	VBOID vbo = afCreateDynamicVertexBuffer(size, buf);
+	AFBufferResource vbo = afCreateDynamicVertexBuffer(size, buf);
 	afSetVertexBuffer(vbo, stride);
 	deviceMan.AddIntermediateCommandlistDependentResource(vbo);
 }
@@ -451,7 +451,7 @@ void AFRenderTarget::BeginRenderToThis()
 	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 }
 
-FakeVAO::FakeVAO(int numBuffers, VBOID const vbos_[], const int strides_[], const UINT offsets_[], IBOID ibo_)
+FakeVAO::FakeVAO(int numBuffers, AFBufferResource const vbos_[], const int strides_[], const UINT offsets_[], AFBufferResource ibo_)
 {
 	ibo = ibo_;
 	vbos.resize(numBuffers);
@@ -500,12 +500,12 @@ void afBindBufferToBindingPoint(const void* buf, int size, int rootParameterInde
 	deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(rootParameterIndex, deviceMan.GetConstantBufferGPUAddress(cbTop));
 }
 
-void afBindBufferToBindingPoint(UBOID ubo, int rootParameterIndex)
+void afBindBufferToBindingPoint(AFBufferResource ubo, int rootParameterIndex)
 {
 	deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(rootParameterIndex, ubo->GetGPUVirtualAddress());
 }
 
-VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, VBOID const vertexBufferIds[], const int strides[], IBOID ibo)
+VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, AFBufferResource const vertexBufferIds[], const int strides[], AFBufferResource ibo)
 {
 	(void)elements;
 	(void)numElements;

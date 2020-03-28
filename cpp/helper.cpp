@@ -13,7 +13,7 @@ double GetTime()
 	return std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1, 1>>>(now - start).count();
 }
 
-IBOID afCreateTiledPlaneIBO(int numTiles, int* numIndies)
+AFBufferResource afCreateTiledPlaneIBO(int numTiles, int* numIndies)
 {
 	const int numVert = numTiles + 1;
 
@@ -40,7 +40,7 @@ IBOID afCreateTiledPlaneIBO(int numTiles, int* numIndies)
 	return afCreateIndexBuffer(&indi[0], (int)indi.size());
 }
 
-VBOID afCreateTiledPlaneVBO(int numTiles)
+AFBufferResource afCreateTiledPlaneVBO(int numTiles)
 {
 	std::vector<Vec2> v;
 	for (int y = 0; y <= numTiles; y++) {
@@ -167,7 +167,7 @@ SRVID afLoadTexture(const char* name, TexDesc& desc)
 	return tex;
 }
 
-IBOID afCreateQuadListIndexBuffer(int numQuads)
+AFBufferResource afCreateQuadListIndexBuffer(int numQuads)
 {
 	std::vector<AFIndex> indi;
 	int numIndi = numQuads * 6;

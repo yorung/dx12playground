@@ -13,24 +13,22 @@ public:
 	}
 };
 
-typedef ComPtr<ID3D12Resource> IBOID;
-typedef ComPtr<ID3D12Resource> VBOID;
-typedef ComPtr<ID3D12Resource> UBOID;
+typedef ComPtr<ID3D12Resource> AFBufferResource;
 typedef ComPtr<ID3D12Resource> SRVID;
 inline void afSafeDeleteBuffer(ComPtr<ID3D12Resource>& p) { p.Reset(); }
 inline void afSafeDeleteTexture(SRVID& p) { p.Reset(); }
 
 void afSetPipeline(ComPtr<ID3D12PipelineState> ps, ComPtr<ID3D12RootSignature> rs);
 void afSetDescriptorHeap(ComPtr<ID3D12DescriptorHeap> heap);
-void afSetVertexBuffer(VBOID id, int stride);
-void afSetVertexBuffers(int numIds, VBOID ids[], int strides[]);
-void afSetIndexBuffer(IBOID id);
-void afWriteBuffer(const IBOID id, const void* buf, int size);
+void afSetVertexBuffer(AFBufferResource id, int stride);
+void afSetVertexBuffers(int numIds, AFBufferResource ids[], int strides[]);
+void afSetIndexBuffer(AFBufferResource id);
+void afWriteBuffer(const AFBufferResource id, const void* buf, int size);
 ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf = nullptr);
-VBOID afCreateVertexBuffer(int size, const void* buf = nullptr);
-IBOID afCreateIndexBuffer(const AFIndex* indi, int numIndi);
+AFBufferResource afCreateVertexBuffer(int size, const void* buf = nullptr);
+AFBufferResource afCreateIndexBuffer(const AFIndex* indi, int numIndi);
 ComPtr<ID3D12Resource> afCreateDynamicVertexBuffer(int size, const void* buf = nullptr);
-UBOID afCreateUBO(int size);
+AFBufferResource afCreateUBO(int size);
 
 ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputElement elements[], int numElements, BlendMode blendMode, DepthStencilMode depthStencilMode, CullMode cullMode, ComPtr<ID3D12RootSignature>& rootSignature, D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology);
 
@@ -53,10 +51,10 @@ void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubr
 #define afCreateDynamicTexture afCreateTexture2D
 
 SRVID LoadTextureViaOS(const char* name, IVec2& size);
-IBOID afCreateTiledPlaneIBO(int numTiles, int* numIndies = nullptr);
+AFBufferResource afCreateTiledPlaneIBO(int numTiles, int* numIndies = nullptr);
 SRVID afLoadTexture(const char* name, TexDesc& desc);
-VBOID afCreateTiledPlaneVBO(int numTiles);
-IBOID afCreateQuadListIndexBuffer(int numQuads);
+AFBufferResource afCreateTiledPlaneVBO(int numTiles);
+AFBufferResource afCreateQuadListIndexBuffer(int numQuads);
 
 ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[]);
 void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value);
@@ -85,7 +83,7 @@ public:
 };
 
 class AFDynamicQuadListVertexBuffer {
-	IBOID ibo;
+	AFBufferResource ibo;
 	UINT stride;
 	int vertexBufferSize;
 public:
@@ -104,10 +102,10 @@ public:
 
 class AFCbvBindToken {
 public:
-	UBOID ubo;
+	AFBufferResource ubo;
 	int top = -1;
 	int size = 0;
-	void Create(UBOID ubo_)
+	void Create(AFBufferResource ubo_)
 	{
 		ubo = ubo_;
 	}
@@ -136,21 +134,21 @@ public:
 
 class FakeVAO
 {
-	std::vector<VBOID> vbos;
+	std::vector<AFBufferResource> vbos;
 	std::vector<UINT> offsets;
 	std::vector<int> strides;
 	ComPtr<ID3D12Resource> ibo;
 public:
-	FakeVAO(int numBuffers, VBOID const buffers[], const int strides[], const UINT offsets[], IBOID ibo);
+	FakeVAO(int numBuffers, AFBufferResource const buffers[], const int strides[], const UINT offsets[], AFBufferResource ibo);
 	void Apply();
 };
 
 typedef std::unique_ptr<FakeVAO> VAOID;
-VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, VBOID const vertexBufferIds[], const int strides[], IBOID ibo);
+VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers, AFBufferResource const vertexBufferIds[], const int strides[], AFBufferResource ibo);
 void afBindVAO(const VAOID& vao);
 inline void afSafeDeleteVAO(VAOID& p) { p.reset(); }
 
 void afBindBufferToBindingPoint(const void* buf, int size, int rootParameterIndex);
-void afBindBufferToBindingPoint(UBOID ubo, int rootParameterIndex);
+void afBindBufferToBindingPoint(AFBufferResource ubo, int rootParameterIndex);
 void afBindTextureToBindingPoint(SRVID srv, int rootParameterIndex);
 #define afBindCubeMapToBindingPoint afBindTextureToBindingPoint

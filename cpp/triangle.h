@@ -1,7 +1,7 @@
 class Triangle
 {
-	VBOID vbo;
-	IBOID ibo;
+	AFBufferResource vbo;
+	AFBufferResource ibo;
 	ComPtr<ID3D12RootSignature> rootSignature;
 	ComPtr<ID3D12PipelineState> pipelineState;
 public:
