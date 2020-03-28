@@ -32,12 +32,6 @@ template <class T> TToPtr<T> ToPtr(T InRef)
 	return TToPtr<T>(InRef);
 }
 
-struct TexDesc {
-	IVec2 size;
-	int arraySize = 1;
-	bool isCubeMap = false;
-};
-
 enum CullMode {
 	CM_DISABLE,
 	CM_CW,
@@ -53,16 +47,6 @@ enum DepthStencilMode {
 	DSM_DISABLE,
 	DSM_DEPTH_ENABLE,
 	DSM_DEPTH_CLOSEREQUAL_READONLY,
-};
-
-enum SamplerType {
-	AFST_POINT_WRAP,
-	AFST_POINT_CLAMP,
-	AFST_LINEAR_WRAP,
-	AFST_LINEAR_CLAMP,
-	AFST_MIPMAP_WRAP,
-	AFST_MIPMAP_CLAMP,
-	AFST_MAX
 };
 
 struct CharSignature

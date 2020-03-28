@@ -39,7 +39,7 @@ void App::Init()
 	fontMan.Init();
 
 	IVec2 scrSize = systemMisc.GetScreenSize();
-	rt.Init(scrSize, AFDT_R8G8B8A8_UNORM, AFDT_DEPTH_STENCIL);
+	rt.Init(scrSize, AFF_R8G8B8A8_UNORM, AFF_D32_FLOAT_S8_UINT);
 
 	SamplerType sampler = AFST_POINT_CLAMP;
 	rsPostProcess.Create("vivid", 0, nullptr, BM_NONE, DSM_DISABLE, CM_DISABLE, 1, &sampler);

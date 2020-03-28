@@ -1,3 +1,5 @@
+#include "AFGraphicsDefinitions.inl"
+
 typedef D3D12_INPUT_ELEMENT_DESC InputElement;
 
 class CInputElement : public InputElement {
@@ -42,13 +44,13 @@ struct AFTexSubresourceData
 	uint32_t pitchSlice;
 };
 
-SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image = nullptr, bool isRenderTargetOrDepthStencil = false);
-SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
+ComPtr<ID3D12Resource> afCreateDynamicTexture(AFFormat format, const IVec2& size, uint32_t flags = AFTF_CPU_WRITE | AFTF_SRV);
+SRVID afCreateTexture2D(AFFormat format, const IVec2& size, void *image = nullptr, bool isRenderTargetOrDepthStencil = false);
+SRVID afCreateTexture2D(AFFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
 void afSetTextureName(SRVID tex, const char* name);
 
 void afWriteTexture(SRVID srv, const TexDesc& desc, const void* buf);
 void afWriteTexture(SRVID id, const TexDesc& desc, int mipCount, const AFTexSubresourceData datas[]);
-#define afCreateDynamicTexture afCreateTexture2D
 
 SRVID LoadTextureViaOS(const char* name, IVec2& size);
 AFBufferResource afCreateTiledPlaneIBO(int numTiles, int* numIndies = nullptr);
@@ -127,7 +129,7 @@ class AFRenderTarget
 public:
 	~AFRenderTarget() { Destroy(); }
 	void InitForDefaultRenderTarget();
-	void Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthStencilFormat = AFDT_INVALID);
+	void Init(IVec2 size, AFFormat colorFormat, AFFormat depthStencilFormat = AFF_INVALID);
 	void Destroy();
 	void BeginRenderToThis();
 	ComPtr<ID3D12Resource> GetTexture();

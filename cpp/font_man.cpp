@@ -49,7 +49,7 @@ bool FontMan::Init()
 	if (!texSrc.Create(TEX_W, TEX_H)) {
 		return false;
 	}
-	texture = afCreateDynamicTexture(AFDT_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
+	texture = afCreateDynamicTexture(AFF_R8G8B8A8_UNORM, IVec2(TEX_W, TEX_H));
 	afSetTextureName(texture, __FUNCTION__);
 	renderStates.Create("font", dimof(elements), elements, BM_ALPHA, DSM_DISABLE, CM_DISABLE, dimof(samplers), samplers);
 	quadListVertexBuffer.Create(elements, dimof(elements), sizeof(FontVertex), SPRITE_MAX);

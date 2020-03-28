@@ -201,7 +201,7 @@ SRVID LoadTextureViaOS(const char* name, IVec2& size)
 	{
 		return SRVID();
 	}
-	return afCreateTexture2D(AFDT_R8G8B8A8_UNORM, size, &col[0]);
+	return afCreateTexture2D(AFF_R8G8B8A8_UNORM, size, &col[0]);
 }
 
 #define IS_HANGUL(c)	( (c) >= 0xAC00 && (c) <= 0xD7A3 )
@@ -293,6 +293,29 @@ void MakeFontBitmap(const char* fontName, const CharSignature& sig, DIB& dib, Ch
 #endif
 
 #if defined(__d3d11_h__) || defined(__d3d12_h__)
+HRESULT _afHandleDXError(const char* file, const char* func, int line, const char* command, HRESULT r)
+{
+	if (r != S_OK)
+	{
+		const char* err = nullptr;
+		switch (r)
+		{
+#define E(er) case er: err = #er; break
+			E(E_INVALIDARG);
+			E(E_OUTOFMEMORY);
+			E(DXGI_ERROR_UNSUPPORTED);
+			E(DXGI_ERROR_DEVICE_RESET);
+			E(DXGI_ERROR_DEVICE_REMOVED);
+#undef E
+		default:
+			aflog("%s %s(%d): err=%08x %s\n", file, func, line, r, command);
+			return r;
+		}
+		aflog("%s %s(%d): err=%08x %s %s\n", file, func, line, r, err, command);
+	}
+	return r;
+}
+
 #include <D3Dcompiler.h>
 #pragma comment(lib, "d3dcompiler.lib")
 ComPtr<ID3DBlob> afCompileHLSL(const char* name, const char* entryPoint, const char* target)

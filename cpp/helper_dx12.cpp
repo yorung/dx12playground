@@ -75,6 +75,23 @@ void afWriteBuffer(const AFBufferResource id, const void* buf, int size)
 	id->Unmap(0, &wroteRange);
 }
 
+static D3D12_RESOURCE_STATES BufferTypeToResourceState(AFBufferType bufferType)
+{
+	switch (bufferType)
+	{
+	case AFBT_VERTEX:
+	case AFBT_VERTEX_CPUWRITE:
+	case AFBT_CONSTANT:
+	case AFBT_CONSTANT_CPUWRITE:
+		return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+	case AFBT_INDEX:
+		return D3D12_RESOURCE_STATE_INDEX_BUFFER;
+	}
+	assert(0);
+	return D3D12_RESOURCE_STATE_COMMON;
+}
+
+
 ComPtr<ID3D12Resource> afCreateBuffer(int size, const void* buf)
 {
 	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN, { 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
@@ -196,9 +213,46 @@ void afSetTextureName(SRVID tex, const char* name)
 	}
 }
 
-SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image, bool isRenderTargetOrDepthStencil)
+ComPtr<ID3D12Resource> afCreateDynamicTexture(AFFormat format, const IVec2& size, uint32_t flags)
 {
-	bool isDepthStencil = format == AFDT_DEPTH || format == AFDT_DEPTH_STENCIL;
+	D3D12_RESOURCE_DESC textureDesc = {};
+	textureDesc.MipLevels = 1;
+	textureDesc.Format = format;
+	textureDesc.Width = size.x;
+	textureDesc.Height = size.y;
+	textureDesc.DepthOrArraySize = 1;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+	bool useClearValue = !!(flags & (AFTF_DSV | AFTF_RTV));
+	D3D12_CLEAR_VALUE clearValue = { afTypelessToDSVFormat(format) };
+	D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_COMMON;
+	if (flags & AFTF_SRV)
+	{
+		resourceState = TEXTURE_STATE;
+	}
+	if (flags & AFTF_DSV)
+	{
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		clearValue.DepthStencil.Depth = 1.0f;
+		resourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	}
+	if (flags & AFTF_RTV)
+	{
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		std::copy_n(clearColor, 4, clearValue.Color);
+		resourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;	// not |=
+	}
+
+	ComPtr<ID3D12Resource> res;
+	afHandleDXError(deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, resourceState, useClearValue ? &clearValue : nullptr, IID_PPV_ARGS(&res)));
+	return res;
+}
+
+SRVID afCreateTexture2D(AFFormat format, const IVec2& size, void *image, bool isRenderTargetOrDepthStencil)
+{
+	bool isDepthStencil = format == AFF_D32_FLOAT || format == AFF_D32_FLOAT_S8_UINT || format == AFF_D24_UNORM_S8_UINT;
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.MipLevels = 1;
 	textureDesc.Format = format;
@@ -237,7 +291,7 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image, bool 
 	return id;
 }
 
-SRVID afCreateTexture2D(AFDTFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[])
+SRVID afCreateTexture2D(AFFormat format, const struct TexDesc& desc, int mipCount, const AFTexSubresourceData datas[])
 {
 	D3D12_RESOURCE_DESC resourceDesc = { D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, (UINT64)desc.size.x, (UINT)desc.size.y, (UINT16)desc.arraySize, (UINT16)mipCount, format, {1, 0} };
 	SRVID tex;
@@ -307,7 +361,7 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	psoDesc.PrimitiveTopologyType = primitiveTopology;
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	psoDesc.DSVFormat = AFDT_DEPTH_STENCIL;
+	psoDesc.DSVFormat = AFF_D32_FLOAT_S8_UINT;
 	psoDesc.SampleDesc.Count = 1;
 	ComPtr<ID3D12PipelineState> pso;
 	HRESULT hr = deviceMan.GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso));
@@ -426,11 +480,11 @@ void AFRenderTarget::InitForDefaultRenderTarget()
 	asDefault = true;
 }
 
-void AFRenderTarget::Init(IVec2 size, AFDTFormat colorFormat, AFDTFormat depthStencilFormat)
+void AFRenderTarget::Init(IVec2 size, AFFormat colorFormat, AFFormat depthStencilFormat)
 {
 	texSize = size;
 	currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	renderTarget = afCreateDynamicTexture(colorFormat, size, nullptr, true);
+	renderTarget = afCreateDynamicTexture(colorFormat, size, AFTF_RTV | AFTF_SRV);
 	deviceMan.AddIntermediateCommandlistDependentResource(renderTarget);
 	afSetTextureName(renderTarget, __FUNCTION__);
 	ID3D12GraphicsCommandList* commandList = deviceMan.GetCommandList();
