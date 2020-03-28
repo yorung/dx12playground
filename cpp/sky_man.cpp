@@ -19,7 +19,8 @@ void SkyMan::Create(const char *texFileName, const char* shader)
 
 void SkyMan::Draw()
 {
-	if (!renderStates.IsReady()) {
+	if (!renderStates.IsReady())
+	{
 		return;
 	}
 	renderStates.Apply();

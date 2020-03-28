@@ -34,12 +34,14 @@ void DeviceManDX12::Destroy()
 	commandList.Reset();
 	commandQueue.Reset();
 	swapChain.Reset();
-	for (FrameResources& res : frameResources) {
+	for (FrameResources& res : frameResources)
+	{
 		res.renderTarget.Reset();
 		res.commandAllocator.Reset();
 		res.srvHeap.Reset();
 		res.mappedConstantBuffer = nullptr;
-		if (res.constantBuffer) {
+		if (res.constantBuffer)
+		{
 			res.constantBuffer->Unmap(0, nullptr);
 		}
 		res.constantBuffer.Reset();
@@ -52,7 +54,8 @@ void DeviceManDX12::Destroy()
 	fenceValue = 1;
 	frameIndex = 0;
 	int cnt = device.Reset();
-	if (cnt) {
+	if (cnt)
+	{
 		MessageBoxA(GetActiveWindow(), SPrintf("%d leaks detected.", cnt), "DX12 leaks", MB_OK);
 	}
 }
@@ -110,7 +113,8 @@ void DeviceManDX12::EndScene()
 
 void DeviceManDX12::Flush()
 {
-	if (!commandList) {
+	if (!commandList)
+	{
 		return;
 	}
 	commandList->Close();
@@ -137,7 +141,8 @@ void DeviceManDX12::ResetCommandListAndSetDescriptorHeap()
 
 int DeviceManDX12::AssignDescriptorHeap(int numRequired)
 {
-	if (numAssignedSrvs + numRequired > maxSrvs) {
+	if (numAssignedSrvs + numRequired > maxSrvs)
+	{
 		assert(0);
 		return -1;
 	}
@@ -152,7 +157,8 @@ void DeviceManDX12::AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> re
 	D3D12_CPU_DESCRIPTOR_HANDLE ptr = res.srvHeap->GetCPUDescriptorHandleForHeapStart();
 	ptr.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * descriptorHeapIndex;
 	D3D12_RESOURCE_DESC resDesc = resToSrv->GetDesc();
-	if (resDesc.DepthOrArraySize == 6) {
+	if (resDesc.DepthOrArraySize == 6)
+	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = resDesc.Format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
@@ -161,7 +167,9 @@ void DeviceManDX12::AssignSRV(int descriptorHeapIndex, ComPtr<ID3D12Resource> re
 		srvDesc.TextureCube.MostDetailedMip = 0;
 		srvDesc.TextureCube.ResourceMinLODClamp = 0;
 		device->CreateShaderResourceView(resToSrv.Get(), &srvDesc, ptr);
-	} else {
+	}
+	else
+	{
 		device->CreateShaderResourceView(resToSrv.Get(), nullptr, ptr);
 	}
 }
@@ -171,7 +179,8 @@ int DeviceManDX12::AssignConstantBuffer(const void* buf, int size)
 	int sizeAligned = (size + 0xff) & ~0xff;
 	int numRequired = sizeAligned / 0x100;
 
-	if (numAssignedConstantBufferBlocks + numRequired > maxConstantBufferBlocks) {
+	if (numAssignedConstantBufferBlocks + numRequired > maxConstantBufferBlocks)
+	{
 		assert(0);
 		return -1;
 	}
@@ -205,7 +214,8 @@ void DeviceManDX12::AddIntermediateCommandlistDependentResource(ComPtr<ID3D12Res
 
 void DeviceManDX12::Present()
 {
-	if (!swapChain) {
+	if (!swapChain)
+	{
 		return;
 	}
 	EndScene();
@@ -224,17 +234,21 @@ void DeviceManDX12::Create(HWND hWnd)
 	}
 #endif
 	ComPtr<IDXGIFactory4> factory;
-	if (S_OK != CreateDXGIFactory1(IID_PPV_ARGS(&factory))) {
+	if (S_OK != CreateDXGIFactory1(IID_PPV_ARGS(&factory)))
+	{
 		Destroy();
 		return;
 	}
 	ComPtr<IDXGIAdapter1> adapter;
-	for (int i = 0; DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter); i++) {
-		if (S_OK == D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device))) {
+	for (int i = 0; DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter); i++)
+	{
+		if (S_OK == D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)))
+		{
 			break;
 		}
 	}
-	if (!device) {
+	if (!device)
+	{
 		Destroy();
 		return;
 	}
@@ -264,11 +278,13 @@ void DeviceManDX12::Create(HWND hWnd)
 	sd.Windowed = TRUE;
 
 	ComPtr<IDXGISwapChain> sc;
-	if (S_OK != factory->CreateSwapChain(commandQueue.Get(), &sd, &sc)) {
+	if (S_OK != factory->CreateSwapChain(commandQueue.Get(), &sd, &sc))
+	{
 		Destroy();
 		return;
 	}
-	if (S_OK != sc.As(&swapChain)) {
+	if (S_OK != sc.As(&swapChain))
+	{
 		Destroy();
 		return;
 	}
@@ -277,7 +293,8 @@ void DeviceManDX12::Create(HWND hWnd)
 	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 	for (int i = 0; i < numFrameBuffers; i++) {
 		FrameResources& res = frameResources[i];
-		if (S_OK != swapChain->GetBuffer(i, IID_PPV_ARGS(&res.renderTarget))) {
+		if (S_OK != swapChain->GetBuffer(i, IID_PPV_ARGS(&res.renderTarget)))
+		{
 			Destroy();
 			return;
 		}
@@ -305,7 +322,8 @@ void DeviceManDX12::Create(HWND hWnd)
 	device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameResources[0].commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList));
 	commandList->Close();
 
-	if (S_OK != device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence))) {
+	if (S_OK != device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))
+	{
 		Destroy();
 		return;
 	}

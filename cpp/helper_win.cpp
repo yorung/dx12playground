@@ -153,7 +153,8 @@ bool ProcessWindowMessage(HWND hWnd, HACCEL hAccelTable)
 	}
 }
 
-namespace Gdiplus {
+namespace Gdiplus
+{
 	using std::min;
 	using std::max;
 }
@@ -196,7 +197,8 @@ static bool LoadImageViaGdiPlus(const char* name, IVec2& size, std::vector<uint3
 SRVID LoadTextureViaOS(const char* name, IVec2& size)
 {
 	std::vector<uint32_t> col;
-	if (!LoadImageViaGdiPlus(name, size, col)) {
+	if (!LoadImageViaGdiPlus(name, size, col))
+	{
 		return SRVID();
 	}
 	return afCreateTexture2D(AFDT_R8G8B8A8_UNORM, size, &col[0]);
@@ -247,20 +249,25 @@ void MakeFontBitmap(const char* fontName, const CharSignature& sig, DIB& dib, Ch
 	GLYPHMETRICS met;
 	memset(&met, 0, sizeof(met));
 	DWORD sizeReq = GetGlyphOutlineW(hdc, (UINT)sig.code, GGO_GRAY8_BITMAP, &met, 0, nullptr, &mat);
-	if (sizeReq) {
+	if (sizeReq)
+	{
 		DIB dib3;
 		afVerify(dib3.Create(met.gmBlackBoxX, met.gmBlackBoxY, 8, 64));
 		afVerify(dib.Create(met.gmBlackBoxX, met.gmBlackBoxY));
 		int sizeBuf = dib3.GetByteSize();
-		if (sizeReq != sizeBuf) {
+		if (sizeReq != sizeBuf)
+		{
 			aflog("FontMan::Build() buf size mismatch! code=%d req=%d dib=%d\n", sig.code, sizeReq, sizeBuf);
 			int fakeBlackBoxY = met.gmBlackBoxY + 1;
 			afVerify(dib3.Create(met.gmBlackBoxX, fakeBlackBoxY, 8, 64));
 			afVerify(dib.Create(met.gmBlackBoxX, fakeBlackBoxY));
 			int sizeBuf = dib3.GetByteSize();
-			if (sizeReq != sizeBuf) {
+			if (sizeReq != sizeBuf)
+			{
 				afVerify(false);
-			} else {
+			}
+			else
+			{
 				aflog("FontMan::Build() buf size matched by increasing Y, but it is an awful workaround. code=%d req=%d dib=%d\n", sig.code, sizeReq, sizeBuf);
 			}
 		}

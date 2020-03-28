@@ -33,7 +33,8 @@ void afSetVertexBuffers(int numIds, VBOID ids[], int strides[])
 	ID3D12GraphicsCommandList* list = deviceMan.GetCommandList();
 	D3D12_VERTEX_BUFFER_VIEW views[10];
 	assert(numIds < _countof(views));
-	for (int i = 0; i < numIds; i++) {
+	for (int i = 0; i < numIds; i++)
+	{
 		D3D12_RESOURCE_DESC desc = ids[i]->GetDesc();
 		views[i] = { ids[i]->GetGPUVirtualAddress(), (UINT)desc.Width, (UINT)strides[i] };
 	}
@@ -53,7 +54,8 @@ void afWriteBuffer(const IBOID id, const void* buf, int size)
 {
 #ifdef _DEBUG
 	D3D12_RESOURCE_DESC desc = id->GetDesc();
-	if (size > (int)desc.Width) {
+	if (size > (int)desc.Width)
+	{
 		return;
 	}
 #endif
@@ -89,7 +91,8 @@ VBOID afCreateVertexBuffer(int size, const void* buf)
 	D3D12_RESOURCE_DESC desc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, (UINT64)size, 1, 1, 1, DXGI_FORMAT_UNKNOWN,{ 1, 0 }, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
 	VBOID o;
 	deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr, IID_PPV_ARGS(&o));
-	if (o) {
+	if (o)
+	{
 		ComPtr<ID3D12Resource> intermediateBuffer = afCreateBuffer(size, buf);
 		deviceMan.GetCommandList()->CopyBufferRegion(o.Get(), 0, intermediateBuffer.Get(), 0, size);
 		deviceMan.AddIntermediateCommandlistDependentResource(intermediateBuffer);
@@ -148,7 +151,8 @@ void afWriteTexture(SRVID tex, const TexDesc& desc, int mipCount, const AFTexSub
 	{
 		assert(datas[i].pitch == rowSizeInBytes[i]);
 		assert(datas[i].pitch <= footprints[i].Footprint.RowPitch);
-		for (UINT row = 0; row < numRows[i]; row++) {
+		for (UINT row = 0; row < numRows[i]; row++)
+		{
 			memcpy(ptr + footprints[i].Offset + footprints[i].Footprint.RowPitch * row, (BYTE*)datas[i].ptr + datas[i].pitch * row, datas[i].pitch);
 		}
 		D3D12_TEXTURE_COPY_LOCATION uploadBufLocation = { uploadBuf.Get(), D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, footprints[i] };
@@ -196,12 +200,16 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image, bool 
 	SRVID id;
 	D3D12_CLEAR_VALUE clearValue = { format };
 
-	if (isRenderTargetOrDepthStencil) {
+	if (isRenderTargetOrDepthStencil)
+	{
 		textureDesc.Flags = isDepthStencil ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		if (isDepthStencil) {
+		if (isDepthStencil)
+		{
 			textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 			clearValue.DepthStencil.Depth = 1.0f;
-		} else {
+		}
+		else
+		{
 			textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			std::copy_n(clearColor, 4, clearValue.Color);
 		}
@@ -210,7 +218,8 @@ SRVID afCreateTexture2D(AFDTFormat format, const IVec2& size, void *image, bool 
 	HRESULT hr = deviceMan.GetDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, isRenderTargetOrDepthStencil ? &clearValue : nullptr, IID_PPV_ARGS(&id));
 	TexDesc texDesc;
 	texDesc.size = size;
-	if (image) {
+	if (image)
+	{
 		afWriteTexture(id, texDesc, image);
 	}
 	return id;
@@ -247,7 +256,8 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	ComPtr<ID3DBlob> rootSignatureBlob;
 	if (S_OK == D3DGetBlobPart(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), D3D_BLOB_ROOT_SIGNATURE, 0, &rootSignatureBlob))
 	{
-		if (rootSignatureBlob) {
+		if (rootSignatureBlob)
+		{
 			HRESULT hr = deviceMan.GetDevice()->CreateRootSignature(0, rootSignatureBlob->GetBufferPointer(), rootSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 		}
 	}
@@ -266,7 +276,8 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	switch (blendMode) {
+	switch (blendMode)
+	{
 	case BM_NONE:
 		psoDesc.BlendState.RenderTarget[0] = solid;
 		break;
@@ -292,9 +303,11 @@ ComPtr<ID3D12PipelineState> afCreatePSO(const char *shaderName, const InputEleme
 	return pso;
 }
 
-class CDescriptorCBV : public D3D12_DESCRIPTOR_RANGE {
+class CDescriptorCBV : public D3D12_DESCRIPTOR_RANGE
+{
 public:
-	CDescriptorCBV(int shaderRegister) {
+	CDescriptorCBV(int shaderRegister)
+	{
 		RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		NumDescriptors = 1;
 		BaseShaderRegister = shaderRegister;
@@ -303,9 +316,11 @@ public:
 	}
 };
 
-class CDescriptorSRV : public D3D12_DESCRIPTOR_RANGE {
+class CDescriptorSRV : public D3D12_DESCRIPTOR_RANGE
+{
 public:
-	CDescriptorSRV(int shaderRegister) {
+	CDescriptorSRV(int shaderRegister)
+	{
 		RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		NumDescriptors = 1;
 		BaseShaderRegister = shaderRegister;
@@ -323,17 +338,21 @@ ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[])
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	HRESULT hr = deviceMan.GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&heap));
 	assert(hr == S_OK);
-	for (int i = 0; i < numSrvs; i++) {
+	for (int i = 0; i < numSrvs; i++)
+	{
 		D3D12_RESOURCE_DESC desc = srvs[i]->GetDesc();
 		auto ptr = heap->GetCPUDescriptorHandleForHeapStart();
 		ptr.ptr += deviceMan.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * i;
-		if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
+		if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+		{
 			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 			cbvDesc.BufferLocation = srvs[i]->GetGPUVirtualAddress();
 			cbvDesc.SizeInBytes = (UINT)desc.Width;
 			assert((cbvDesc.SizeInBytes & 0xff) == 0);
 			deviceMan.GetDevice()->CreateConstantBufferView(&cbvDesc, ptr);
-		} else {
+		}
+		else
+		{
 			deviceMan.GetDevice()->CreateShaderResourceView(srvs[i].Get(), nullptr, ptr);
 		}
 	}
@@ -343,7 +362,8 @@ ComPtr<ID3D12DescriptorHeap> afCreateDescriptorHeap(int numSrvs, SRVID srvs[])
 
 void afWaitFenceValue(ComPtr<ID3D12Fence> fence, UINT64 value)
 {
-	if (fence->GetCompletedValue() >= value) {
+	if (fence->GetCompletedValue() >= value)
+	{
 		return;
 	}
 	HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -437,7 +457,8 @@ FakeVAO::FakeVAO(int numBuffers, VBOID const vbos_[], const int strides_[], cons
 	vbos.resize(numBuffers);
 	strides.resize(numBuffers);
 	offsets.resize(numBuffers);
-	for (int i = 0; i < numBuffers; i++) {
+	for (int i = 0; i < numBuffers; i++)
+	{
 		vbos[i] = vbos_[i];
 		strides[i] = (UINT)strides_[i];
 		offsets[i] = offsets_ ? offsets_[i] : 0;
@@ -447,20 +468,27 @@ FakeVAO::FakeVAO(int numBuffers, VBOID const vbos_[], const int strides_[], cons
 void FakeVAO::Apply()
 {
 	afSetVertexBuffers((int)vbos.size(), vbos.data(), strides.data());
-	if (ibo) {
+	if (ibo)
+	{
 		afSetIndexBuffer(ibo);
 	}
 }
 
 void afBindCbvs(AFCbvBindToken cbvs[], int nCbvs)
 {
-	for (int i = 0; i < nCbvs; i++) {
+	for (int i = 0; i < nCbvs; i++)
+	{
 		AFCbvBindToken& cbv = cbvs[i];
-		if (cbv.top >= 0) {
+		if (cbv.top >= 0)
+		{
 			deviceMan.GetCommandList()->SetGraphicsRootConstantBufferView(i, deviceMan.GetConstantBufferGPUAddress(cbv.top));
-		} else if (cbv.ubo) {
+		}
+		else if (cbv.ubo)
+		{
 			afBindBufferToBindingPoint(cbv.ubo, i);
-		} else {
+		}
+		else
+		{
 			assert(0);
 		}
 	}
@@ -487,7 +515,8 @@ VAOID afCreateVAO(const InputElement elements[], int numElements, int numBuffers
 
 void afBindVAO(const VAOID& vao)
 {
-	if (vao) {
+	if (vao)
+	{
 		vao->Apply();
 	}
 }
