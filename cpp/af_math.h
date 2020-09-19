@@ -9,10 +9,10 @@ inline affloat clamp(affloat x, affloat mi, affloat ma) { return std::max(std::m
 struct Vec2
 {
 	affloat x, y;
-	Vec2() : x(0), y(0) {}
-	Vec2(affloat X, affloat Y) : x(X), y(Y) {}
+	constexpr Vec2() : x(0), y(0) {}
+	constexpr Vec2(affloat X, affloat Y) : x(X), y(Y) {}
 #ifdef USE_SIMPLE_MATH
-	Vec2(const Vector2& v) : Vec2(v.x, v.y) {}
+	constexpr Vec2(const Vector2& v) : Vec2(v.x, v.y) {}
 	operator Vector2() const { return Vector2(x, y); }
 #endif
 	Vec2 operator+(const Vec2& r) const { return Vec2(x + r.x, y + r.y); }
@@ -31,37 +31,37 @@ struct Vec2
 struct Vec3
 {
 	affloat x, y, z;
-	Vec3() : x(0), y(0), z(0) {}
-	Vec3(affloat X, affloat Y, affloat Z) : x(X), y(Y), z(Z) {}
+	constexpr Vec3() : x(0), y(0), z(0) {}
+	constexpr Vec3(affloat X, affloat Y, affloat Z) : x(X), y(Y), z(Z) {}
 #ifdef USE_SIMPLE_MATH
-	Vec3(const Vector3& v) : Vec3(v.x, v.y, v.z) {}
+	constexpr Vec3(const Vector3& v) : Vec3(v.x, v.y, v.z) {}
 	operator Vector3() const { return Vector3(x, y, z); }
 #endif
 #ifdef USE_D3DX
-	Vec3(const D3DXVECTOR3& v) : Vec3(v.x, v.y, v.z) {}
+	constexpr Vec3(const D3DXVECTOR3& v) : Vec3(v.x, v.y, v.z) {}
 	operator D3DXVECTOR3() const { return D3DXVECTOR3(x, y, z); }
 #endif
-	Vec3 operator+(const Vec3& r) const { return Vec3(x + r.x, y + r.y, z + r.z); }
-	Vec3 operator-(const Vec3& r) const { return Vec3(x - r.x, y - r.y, z - r.z); }
-	Vec3 operator*(const Vec3& r) const { return Vec3(x * r.x, y * r.y, z * r.z); }
-	Vec3 operator*(affloat r) const { return Vec3(x * r, y * r, z * r); }
-	Vec3 operator/(affloat r) const { return Vec3(x / r, y / r, z / r); }
+	constexpr Vec3 operator+(const Vec3& r) const { return Vec3(x + r.x, y + r.y, z + r.z); }
+	constexpr Vec3 operator-(const Vec3& r) const { return Vec3(x - r.x, y - r.y, z - r.z); }
+	constexpr Vec3 operator*(const Vec3& r) const { return Vec3(x * r.x, y * r.y, z * r.z); }
+	constexpr Vec3 operator*(affloat r) const { return Vec3(x * r, y * r, z * r); }
+	constexpr Vec3 operator/(affloat r) const { return Vec3(x / r, y / r, z / r); }
 
-	Vec3 operator-() const { return Vec3(-x, -y, -z); }
+	constexpr Vec3 operator-() const { return Vec3(-x, -y, -z); }
 
-	Vec3 operator-=(const Vec3& r) { return *this = *this - r; }
-	Vec3 operator+=(const Vec3& r) { return *this = *this + r; }
-	Vec3 operator*=(affloat r) { return *this = *this * r; }
-	bool operator==(const Vec3& r) const { return x == r.x && y == r.y && z == r.z; }
+	constexpr Vec3 operator-=(const Vec3& r) { return *this = *this - r; }
+	constexpr Vec3 operator+=(const Vec3& r) { return *this = *this + r; }
+	constexpr Vec3 operator*=(affloat r) { return *this = *this * r; }
+	constexpr bool operator==(const Vec3& r) const { return x == r.x && y == r.y && z == r.z; }
 };
 
 struct Vec4
 {
 	affloat x, y, z, w;
-	Vec4() : x(0), y(0), z(0), w(0) {}
-	Vec4(affloat X, affloat Y, affloat Z, affloat W) : x(X), y(Y), z(Z), w(W) {}
+	constexpr Vec4() : x(0), y(0), z(0), w(0) {}
+	constexpr Vec4(affloat X, affloat Y, affloat Z, affloat W) : x(X), y(Y), z(Z), w(W) {}
 #ifdef USE_SIMPLE_MATH
-	Vec4(const Vector4& v) : Vec4(v.x, v.y, v.z, v.w) {}
+	constexpr Vec4(const Vector4& v) : Vec4(v.x, v.y, v.z, v.w) {}
 #endif
 	bool operator==(const Vec4& r) const { return x == r.x && y == r.y && z == r.z && w == r.w; }
 };
@@ -69,51 +69,51 @@ struct Vec4
 struct IVec2
 {
 	int x, y;
-	IVec2() : x(0), y(0) {}
-	IVec2(int X, int Y) : x(X), y(Y) {}
-	IVec2(Vec2 v) : x((int)v.x), y((int)v.y) {}
-	IVec2 operator+(const IVec2& r) const { return IVec2(x + r.x, y + r.y); }
-	IVec2 operator-(const IVec2& r) const { return IVec2(x - r.x, y - r.y); }
-	operator Vec2() const { return Vec2((float)x, (float)y); }
-	IVec2 operator =(const Vec2 r) { x = (int)r.x; y = (int)r.y; return *this; }
+	constexpr IVec2() : x(0), y(0) {}
+	constexpr IVec2(int X, int Y) : x(X), y(Y) {}
+	constexpr IVec2(const Vec2& v) : x((int)v.x), y((int)v.y) {}
+	constexpr IVec2 operator+(const IVec2& r) const { return IVec2(x + r.x, y + r.y); }
+	constexpr IVec2 operator-(const IVec2& r) const { return IVec2(x - r.x, y - r.y); }
+	constexpr operator Vec2() const { return Vec2((float)x, (float)y); }
+	constexpr IVec2 operator =(const Vec2 r) { x = (int)r.x; y = (int)r.y; return *this; }
 };
 
 struct IVec3
 {
 	int x, y, z;
-	IVec3() : x(0), y(0), z(0) {}
-	IVec3(int X, int Y, int Z) : x(X), y(Y), z(Z) {}
+	constexpr IVec3() : x(0), y(0), z(0) {}
+	constexpr IVec3(int X, int Y, int Z) : x(X), y(Y), z(Z) {}
 };
 
 struct IVec4
 {
 	int x, y, z, w;
-	IVec4() : x(0), y(0), z(0), w(0) {}
-	IVec4(int X, int Y, int Z, int W) : x(X), y(Y), z(Z), w(W) {}
-	IVec4 operator+(const IVec4& r) const { return IVec4(x + r.x, y + r.y, z + r.z, w + r.w); }
-	IVec4 operator+=(const IVec4& r) { return *this = *this + r; }
-	IVec4 operator/(int r) const { return IVec4(x / r, y / r, z / r, w / r); }
-	IVec4 operator/=(int r) { return *this = *this / r; }
+	constexpr IVec4() : x(0), y(0), z(0), w(0) {}
+	constexpr IVec4(int X, int Y, int Z, int W) : x(X), y(Y), z(Z), w(W) {}
+	constexpr IVec4 operator+(const IVec4& r) const { return IVec4(x + r.x, y + r.y, z + r.z, w + r.w); }
+	constexpr IVec4 operator+=(const IVec4& r) { return *this = *this + r; }
+	constexpr IVec4 operator/(int r) const { return IVec4(x / r, y / r, z / r, w / r); }
+	constexpr IVec4 operator/=(int r) { return *this = *this / r; }
 };
 
-inline affloat dot(const Vec3& l, const Vec3& r)
+constexpr affloat dot(const Vec3& l, const Vec3& r)
 {
 	return l.x * r.x + l.y * r.y + l.z * r.z;
 }
 
-inline affloat dot(const Vec2& l, const Vec2& r)
+constexpr affloat dot(const Vec2& l, const Vec2& r)
 {
 	return l.x * r.x + l.y * r.y;
 }
 
-inline Vec3 cross(const Vec3& l, const Vec3& r)
+constexpr Vec3 cross(const Vec3& l, const Vec3& r)
 {
 #define _(u,v) (l.u * r.v - l.v * r.u)
 	return Vec3(_(y, z), _(z, x), _(x, y));
 #undef _
 }
 
-inline affloat cross(const Vec2& l, const Vec2& r)
+constexpr affloat cross(const Vec2& l, const Vec2& r)
 {
 	return l.x * r.y - l.y * r.x;
 }
@@ -135,48 +135,49 @@ inline Vec2 frac(const Vec2& v)
 	return Vec2(frac(v.x), frac(v.y));
 }
 
-inline Vec2 floor(const Vec2& v)
+constexpr Vec2 floor(const Vec2& v)
 {
 	return Vec2(std::floor(v.x), std::floor(v.y));
 }
 
-inline Vec2 ceil(const Vec2& v)
+constexpr Vec2 ceil(const Vec2& v)
 {
 	return Vec2(std::ceil(v.x), std::ceil(v.y));
 }
 
-inline Vec2 max(const Vec2& a, const Vec2& b) {
+constexpr Vec2 max(const Vec2& a, const Vec2& b)
+{
 	return Vec2(std::max(a.x, b.x), std::max(a.y, b.y));
 }
 
-inline Vec2 min(const Vec2& a, const Vec2& b) {
+constexpr Vec2 min(const Vec2& a, const Vec2& b) {
 	return Vec2(std::min(a.x, b.x), std::min(a.y, b.y));
 }
 
-inline IVec2 max(const IVec2& a, const IVec2& b) {
+constexpr IVec2 max(const IVec2& a, const IVec2& b) {
 	return IVec2(std::max(a.x, b.x), std::max(a.y, b.y));
 }
 
-inline IVec2 min(const IVec2& a, const IVec2& b) {
+constexpr IVec2 min(const IVec2& a, const IVec2& b) {
 	return IVec2(std::min(a.x, b.x), std::min(a.y, b.y));
 }
 
-template <class V> inline affloat lengthSq(const V& v)
+template <class V> constexpr affloat lengthSq(const V& v)
 {
 	return dot(v, v);
 }
 
-template <class V3> inline affloat length(const V3& v)
+template <class V3> constexpr affloat length(const V3& v)
 {
 	return std::sqrt(lengthSq(v));
 }
 
-template <class V> inline V normalize(const V& v)
+template <class V> constexpr V normalize(const V& v)
 {
 	return v / length(v);
 }
 
-template <class T> inline T lerp(const T& x, const T& y, affloat s)
+template <class T> constexpr T lerp(const T& x, const T& y, affloat s)
 {
 	return x + (y - x) * s;
 }
@@ -199,7 +200,7 @@ struct Quat
 	Quat Conjugate() const { return Quat(w, -v); }
 };
 
-inline affloat dot(const Quat& l, const Quat& r)
+constexpr affloat dot(const Quat& l, const Quat& r)
 {
 	return dot(l.v, r.v) + l.w * r.w;
 }
@@ -281,7 +282,7 @@ struct Mat
 
 
 // http://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-inline Vec3 proj(Vec3 u, Vec3 v)
+constexpr Vec3 proj(const Vec3& u, const Vec3& v)
 {
 	return u * (dot(u, v) / dot(u, u));
 }
@@ -428,14 +429,14 @@ inline Quat m2q(const Mat& m_)
 #endif
 }
 
-inline Vec3 transform(const Vec3& v, const Mat& m)
+constexpr Vec3 transform(const Vec3& v, const Mat& m)
 {
 #define _(c) (m._1##c * v.x + m._2##c * v.y + m._3##c * v.z + m._4##c)
 	return Vec3(_(1), _(2), _(3));
 #undef _
 }
 
-inline Vec4 transform(const Vec4& v, const Mat& m)
+constexpr Vec4 transform(const Vec4& v, const Mat& m)
 {
 #define _(c) (m._1##c * v.x + m._2##c * v.y + m._3##c * v.z + m._4##c * v.w)
 	return Vec4(_(1), _(2), _(3), _(4));

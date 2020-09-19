@@ -8,10 +8,10 @@ App::App()
 
 void App::Draw()
 {
-	IVec2 scrSize = systemMisc.GetScreenSize();
-	float f = 1000;
-	float n = 1;
-	float aspect = (float)scrSize.x / scrSize.y;
+	const IVec2 scrSize = systemMisc.GetScreenSize();
+	constexpr float f = 1000;
+	constexpr float n = 1;
+	const float aspect = (float)scrSize.x / scrSize.y;
 	Mat proj = perspectiveLH(45.0f * (float)M_PI / 180.0f, aspect, n, f);
 	matrixMan.Set(MatrixMan::PROJ, proj);
 
@@ -38,7 +38,7 @@ void App::Init()
 //	skyMan.Create("C:\\Program Files (x86)\\Microsoft DirectX SDK (August 2009)\\Samples\\Media\\Lobby\\LobbyCube.dds", "sky_cubemap");
 	fontMan.Init();
 
-	IVec2 scrSize = systemMisc.GetScreenSize();
+	const IVec2 scrSize = systemMisc.GetScreenSize();
 	rt.Init(scrSize, AFF_R8G8B8A8_UNORM, AFF_D32_FLOAT_S8_UINT);
 
 	SamplerType sampler = AFST_POINT_CLAMP;
